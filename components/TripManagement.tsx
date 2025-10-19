@@ -1,140 +1,187 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import type { LogisticsState } from '../hooks/useLogisticsState';
-import type { Load, Trip } from '../types';
+import type { Trip } from '../types';
 import { LoadStatus, TripStatus } from '../types';
-import { formatCurrency, formatDateTime } from '../utils/helpers';
+import { formatCurrency } from '../utils/helpers';
 import Modal from './Modal';
-import TripDetailModal from './TripDetailModal';
 import PageHeader from './PageHeader';
+import TripDetailModal from './TripDetailModal';
 
-// Trip Assignment Form
-const AssignTripForm: React.FC<{
+// Form for creating a new trip
+const TripForm: React.FC<{
   logisticsState: LogisticsState;
-  load: Load;
-  onSave: (tripData: Omit<Trip, 'id' | 'events'>) => void;
+  onSave: (trip: Omit<Trip, 'id' | 'events'>) => void;
   onClose: () => void;
-}> = ({ logisticsState, load, onSave, onClose }) => {
-  const { trucks } = logisticsState;
+}> = ({ logisticsState, onSave, onClose }) => {
+  const { loads, trucks } = logisticsState;
   const [formData, setFormData] = useState({
+    loadId: '',
     truckId: '',
     truckFreight: 0,
     driverCommission: 0,
+    status: TripStatus.Assigned,
   });
 
+  // New state for commission calculation
+  const [autoCalculate, setAutoCalculate] = useState(true);
+  const [commissionPercentage, setCommissionPercentage] = useState(10); // Default 10%
+
+  const availableLoads = useMemo(() => loads.filter(load => load.status === LoadStatus.Open), [loads]);
+
+  // Effect to automatically calculate commission
+  useEffect(() => {
+    if (autoCalculate) {
+      const freight = Number(formData.truckFreight) || 0;
+      const percentage = Number(commissionPercentage) || 0;
+      const commission = Math.round((freight * percentage) / 100);
+      setFormData(prev => ({ ...prev, driverCommission: commission }));
+    }
+  }, [formData.truckFreight, commissionPercentage, autoCalculate]);
+
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
+  
+  const handlePercentageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCommissionPercentage(Number(e.target.value));
+  };
+  
+  const handleAutoToggle = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAutoCalculate(e.target.checked);
+  };
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSave({
-      loadId: load.id,
-      truckId: formData.truckId,
+      ...formData,
       truckFreight: Number(formData.truckFreight),
       driverCommission: Number(formData.driverCommission),
-      status: TripStatus.Assigned,
     });
     onClose();
   };
 
-  const selectedTruck = trucks.find(t => t.id === formData.truckId);
-
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <h3 className="font-semibold">Assigning Truck to Load #{load.id.slice(-6)}</h3>
-        <p className="text-sm text-gray-500">{load.loadingLocation} to {load.unloadingLocation}</p>
-      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="md:col-span-2">
-          <label className="block text-sm font-medium">Truck</label>
-          <select name="truckId" value={formData.truckId} onChange={handleChange} required className="mt-1 block w-full p-2 border rounded-md bg-white focus:ring-primary focus:border-primary">
-            <option value="">Select Truck</option>
-            {trucks.map(t => <option key={t.id} value={t.id}>{t.truckNumber} ({t.driverName})</option>)}
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Select Load</label>
+          <select name="loadId" value={formData.loadId} onChange={handleChange} required className="mt-1 block w-full p-2 border rounded-md bg-white focus:ring-primary focus:border-primary">
+            <option value="">Select an open load</option>
+            {availableLoads.map(load => (
+              <option key={load.id} value={load.id}>
+                #{load.id.slice(-4)}: {load.loadingLocation} to {load.unloadingLocation}
+              </option>
+            ))}
           </select>
-          {selectedTruck && <p className="text-xs text-gray-500 mt-1">Driver: {selectedTruck.driverName}</p>}
         </div>
-        <div><label className="block text-sm font-medium">Truck Freight</label><input type="number" name="truckFreight" value={formData.truckFreight} onChange={handleChange} required className="mt-1 block w-full p-2 border rounded-md bg-white focus:ring-primary focus:border-primary"/></div>
-        <div><label className="block text-sm font-medium">Driver Commission</label><input type="number" name="driverCommission" value={formData.driverCommission} onChange={handleChange} required className="mt-1 block w-full p-2 border rounded-md bg-white focus:ring-primary focus:border-primary"/></div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Select Truck</label>
+          <select name="truckId" value={formData.truckId} onChange={handleChange} required className="mt-1 block w-full p-2 border rounded-md bg-white focus:ring-primary focus:border-primary">
+            <option value="">Select an available truck</option>
+            {trucks.map(truck => (
+              <option key={truck.id} value={truck.id}>{truck.truckNumber} ({truck.driverName})</option>
+            ))}
+          </select>
+        </div>
+        <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700">Truck Freight</label>
+            <input type="number" name="truckFreight" value={formData.truckFreight} onChange={handleChange} required className="mt-1 block w-full p-2 border rounded-md bg-white focus:ring-primary focus:border-primary" />
+        </div>
+        <div className="md:col-span-2 p-4 border rounded-md bg-gray-50 space-y-4">
+            <div className="flex items-start">
+              <div className="flex items-center h-5">
+                <input
+                  id="auto-calculate-commission"
+                  name="auto-calculate-commission"
+                  type="checkbox"
+                  checked={autoCalculate}
+                  onChange={handleAutoToggle}
+                  className="focus:ring-primary h-4 w-4 text-primary border-gray-300 rounded"
+                />
+              </div>
+              <div className="ml-3 text-sm">
+                <label htmlFor="auto-calculate-commission" className="font-medium text-gray-700">
+                  Auto-calculate Driver Commission
+                </label>
+                <p className="text-gray-500">Calculate commission based on a percentage of the truck freight.</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+               <div>
+                  <label htmlFor="commissionPercentage" className="block text-sm font-medium text-gray-700">Commission Percentage (%)</label>
+                  <input
+                    type="number"
+                    id="commissionPercentage"
+                    value={commissionPercentage}
+                    onChange={handlePercentageChange}
+                    disabled={!autoCalculate}
+                    className={`mt-1 block w-full p-2 border rounded-md bg-white focus:ring-primary focus:border-primary ${!autoCalculate ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                  />
+               </div>
+               <div>
+                  <label htmlFor="driverCommission" className="block text-sm font-medium text-gray-700">Driver Commission Amount</label>
+                  <input
+                    type="number"
+                    name="driverCommission"
+                    id="driverCommission"
+                    value={formData.driverCommission}
+                    onChange={handleChange}
+                    disabled={autoCalculate}
+                    className={`mt-1 block w-full p-2 border rounded-md bg-white focus:ring-primary focus:border-primary ${autoCalculate ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                  />
+               </div>
+            </div>
+        </div>
       </div>
       <div className="flex justify-end pt-4 space-x-2">
         <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-md">Cancel</button>
-        <button type="submit" className="px-4 py-2 bg-primary text-white rounded-md">Assign Trip</button>
+        <button type="submit" className="px-4 py-2 bg-primary text-white rounded-md">Assign Truck</button>
       </div>
     </form>
   );
 };
 
 const TripManagement: React.FC<{ logisticsState: LogisticsState }> = ({ logisticsState }) => {
-  const { loads, trips, trucks, clients, transactions, documents, addTrip, updateTrip, updateLoad, addTransaction, addDocument } = logisticsState;
-  const [assigningLoad, setAssigningLoad] = useState<Load | undefined>(undefined);
-  const [viewingTrip, setViewingTrip] = useState<Trip | undefined>(undefined);
-  const [activeTab, setActiveTab] = useState<'active' | 'assignment' | 'completed'>('active');
+  const { trips, loads, trucks, addTrip } = logisticsState;
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedTrip, setSelectedTrip] = useState<Trip | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState('');
-
-  const getTripDetails = (trip: Trip) => ({
-    load: loads.find(l => l.id === trip.loadId),
-    truck: trucks.find(t => t.id === trip.truckId),
-    client: clients.find(c => c.id === loads.find(l => l.id === trip.loadId)?.clientId)
-  });
-
-  const filteredData = useMemo(() => {
-    const lowerSearchTerm = searchTerm.toLowerCase();
-    
-    if (activeTab === 'assignment') {
-        return loads
-        .filter(l => l.status === LoadStatus.Open)
-        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-        .filter(load => 
-            load.loadingLocation.toLowerCase().includes(lowerSearchTerm) ||
-            load.unloadingLocation.toLowerCase().includes(lowerSearchTerm) ||
-            load.materialDescription.toLowerCase().includes(lowerSearchTerm)
-        );
-    }
-
-    const searchFilter = (trip: Trip) => {
-      if (!lowerSearchTerm) return true;
-      const { load, truck, client } = getTripDetails(trip);
-      return (
-        trip.id.toLowerCase().includes(lowerSearchTerm) ||
-        load?.id.toLowerCase().includes(lowerSearchTerm) ||
-        truck?.truckNumber.toLowerCase().includes(lowerSearchTerm) ||
-        truck?.driverName.toLowerCase().includes(lowerSearchTerm) ||
-        client?.name.toLowerCase().includes(lowerSearchTerm) ||
-        load?.loadingLocation.toLowerCase().includes(lowerSearchTerm) ||
-        load?.unloadingLocation.toLowerCase().includes(lowerSearchTerm)
-      );
-    };
-    
-    let filteredTrips: Trip[] = [];
-    if (activeTab === 'active') {
-        filteredTrips = trips.filter(t => t.status !== TripStatus.Completed && searchFilter(t));
-    } else if (activeTab === 'completed') {
-        filteredTrips = trips.filter(t => t.status === TripStatus.Completed && searchFilter(t));
-    }
-
-    return filteredTrips.sort((a, b) => {
-        const dateA = a.events[a.events.length - 1]?.timestamp?.getTime() || 0;
-        const dateB = b.events[b.events.length - 1]?.timestamp?.getTime() || 0;
-        return dateB - dateA;
-    });
-  }, [loads, trips, clients, trucks, activeTab, searchTerm]);
-
-  const tripDetailsForModal = useMemo(() => {
-    if (!viewingTrip) return null;
-    const {load, truck, client} = getTripDetails(viewingTrip);
-    if (!load || !truck || !client) return null;
-    const tripTransactions = transactions.filter(t => t.tripId === viewingTrip.id);
-    const tripDocuments = documents.filter(d => d.tripId === viewingTrip.id);
-    return { load, truck, client, tripTransactions, tripDocuments };
-  }, [viewingTrip, loads, trucks, clients, transactions, documents]);
+  const [statusFilter, setStatusFilter] = useState<TripStatus | 'all'>('all');
   
-  const handleUpdateTripStatus = (trip: Trip, newStatus: TripStatus) => {
-    const updatedTrip = { ...trip, status: newStatus, events: [...trip.events, { status: newStatus, timestamp: new Date() }] };
-    updateTrip(updatedTrip);
-    const relatedLoad = loads.find(l => l.id === trip.loadId);
-    if (relatedLoad && (newStatus === TripStatus.Completed || newStatus === TripStatus.InTransit)) {
-        updateLoad({ ...relatedLoad, status: newStatus as any });
+  const handleSaveTrip = (tripData: Omit<Trip, 'id' | 'events'>) => {
+    addTrip(tripData);
+  };
+
+  const filteredTrips = useMemo(() => {
+    return [...trips]
+      .sort((a, b) => b.events[0].timestamp.getTime() - a.events[0].timestamp.getTime())
+      .filter(trip => {
+        const load = loads.find(l => l.id === trip.loadId);
+        const truck = trucks.find(t => t.id === trip.truckId);
+        
+        const searchMatch =
+          searchTerm === '' ||
+          trip.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          load?.loadingLocation.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          load?.unloadingLocation.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          truck?.truckNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          truck?.driverName.toLowerCase().includes(searchTerm.toLowerCase());
+          
+        const statusMatch = statusFilter === 'all' || trip.status === statusFilter;
+        
+        return searchMatch && statusMatch;
+      });
+  }, [trips, loads, trucks, searchTerm, statusFilter]);
+
+  const getStatusColor = (status: TripStatus) => {
+    switch (status) {
+      case TripStatus.Completed: return 'bg-success/10 text-success';
+      case TripStatus.Pending: return 'bg-gray-200 text-gray-800';
+      default: return 'bg-warning/10 text-warning';
     }
   };
 
@@ -142,108 +189,118 @@ const TripManagement: React.FC<{ logisticsState: LogisticsState }> = ({ logistic
     <div className="space-y-6">
       <PageHeader
         title="Trip Management"
-        actionButton={activeTab === 'assignment' ? (
-             <button onClick={() => alert('Add load from Load Management page')} className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 flex items-center shadow-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" /></svg>
-                Add New Load
-            </button>
-        ) : undefined}
+        actionButton={
+          <button onClick={() => setIsModalOpen(true)} className="px-4 py-2 bg-primary text-white rounded-md flex items-center shadow-sm hover:bg-primary/90">
+            Assign Truck to Load
+          </button>
+        }
       >
-        <div className="bg-white p-4 rounded-lg shadow-sm border">
-            <input type="text" placeholder={activeTab === 'assignment' ? "Search unassigned loads..." : "Search trips by ID, truck, driver..."} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full p-2 border border-gray-300 rounded-md shadow-sm bg-white focus:ring-primary focus:border-primary" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white p-4 rounded-lg shadow-sm border">
+            <div className="md:col-span-2">
+                <input
+                    type="text"
+                    placeholder="Search by Trip ID, route, truck, driver..."
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded-md shadow-sm bg-white focus:ring-primary focus:border-primary"
+                />
+            </div>
+            <div>
+                <select
+                    value={statusFilter}
+                    onChange={e => setStatusFilter(e.target.value as TripStatus | 'all')}
+                    className="w-full p-2 border border-gray-300 rounded-md shadow-sm bg-white focus:ring-primary focus:border-primary"
+                >
+                    <option value="all">All Statuses</option>
+                    {Object.values(TripStatus).map(status => (
+                        <option key={status} value={status}>{status}</option>
+                    ))}
+                </select>
+            </div>
         </div>
       </PageHeader>
       
-      <div className="border-b border-gray-200">
-          <nav className="-mb-px flex space-x-8" aria-label="Tabs">
-            <button onClick={() => { setActiveTab('active'); setSearchTerm(''); }} className={`${activeTab === 'active' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}>Active Trips</button>
-            <button onClick={() => { setActiveTab('assignment'); setSearchTerm(''); }} className={`${activeTab === 'assignment' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}>Needs Assignment</button>
-            <button onClick={() => { setActiveTab('completed'); setSearchTerm(''); }} className={`${activeTab === 'completed' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}>Completed Trips</button>
-          </nav>
-      </div>
-      
-      {activeTab === 'assignment' ? (
-          <div className="space-y-4">
-            {(filteredData as Load[]).map(load => (
-                <div key={load.id} className="bg-white p-4 rounded-lg shadow-md border">
-                    <p className="font-bold text-dark">#{load.id.slice(-6)}</p>
-                    <p className="mt-2"><span className="font-semibold">Route:</span> {load.loadingLocation} &rarr; {load.unloadingLocation}</p>
-                    <p className="text-sm"><span className="font-semibold">Material:</span> {load.materialDescription}</p>
-                    <div className="mt-4 pt-2 border-t flex justify-end">
-                        <button onClick={() => setAssigningLoad(load)} className="px-4 py-2 bg-secondary text-white text-sm font-semibold rounded-md hover:bg-secondary/90">Assign Truck</button>
-                    </div>
-                </div>
-            ))}
-          </div>
-      ) : (
-        <>
-            {/* Mobile View */}
-            <div className="space-y-4 md:hidden">
-            {(filteredData as Trip[]).map(trip => {
-                const { load, truck } = getTripDetails(trip);
-                if (!load || !truck) return null;
-                const lastEvent = trip.events[trip.events.length - 1];
-                return (
-                <div key={trip.id} className="bg-white p-4 rounded-lg shadow-md border">
+      {/* Mobile Card View */}
+      <div className="space-y-4 md:hidden">
+        {filteredTrips.map(trip => {
+            const load = loads.find(l => l.id === trip.loadId);
+            const truck = trucks.find(t => t.id === trip.truckId);
+            return (
+                <div key={trip.id} onClick={() => setSelectedTrip(trip)} className="bg-white p-4 rounded-lg shadow-md border cursor-pointer hover:border-primary">
                     <div className="flex justify-between items-start">
                         <div>
-                            <p className="font-bold text-dark">#{trip.id.slice(-4)} / #{load.id.slice(-4)}</p>
-                            <p className="text-sm text-medium">{truck.truckNumber}</p>
+                            <p className="font-bold text-dark">Trip #{trip.id.slice(-4)}</p>
+                            <p className="text-sm text-medium">{truck?.truckNumber}</p>
                         </div>
-                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${trip.status === TripStatus.Completed ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'}`}>{trip.status}</span>
+                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(trip.status)}`}>
+                            {trip.status}
+                        </span>
                     </div>
-                    <p className="text-sm mt-2"><span className="font-semibold">Driver:</span> {truck.driverName}</p>
-                    <p className="text-xs text-medium">Last Update: {formatDateTime(lastEvent.timestamp)}</p>
-                    <div className="mt-4 pt-4 border-t space-y-2">
-                        {trip.status !== TripStatus.Completed && (
-                            <select onChange={(e) => handleUpdateTripStatus(trip, e.target.value as TripStatus)} value={trip.status} className="p-2 border rounded-md text-sm w-full bg-white focus:ring-primary focus:border-primary">
-                                <option value="" disabled>Update Status</option>
-                                {Object.values(TripStatus).map(s => <option key={s} value={s}>{s}</option>)}
-                            </select>
-                        )}
-                        <button onClick={() => setViewingTrip(trip)} className="w-full text-center px-4 py-2 bg-primary/10 text-primary text-sm font-semibold rounded-md hover:bg-primary/20">View Details</button>
+                    <div className="mt-4 space-y-2 text-sm">
+                        <p><span className="font-semibold">Route:</span> {load?.loadingLocation} &rarr; {load?.unloadingLocation}</p>
+                        <p><span className="font-semibold">Driver:</span> {truck?.driverName}</p>
+                        <p><span className="font-semibold">Freight:</span> {formatCurrency(trip.truckFreight)}</p>
+                        {trip.driverCommission > 0 && <p><span className="font-semibold">Commission:</span> {formatCurrency(trip.driverCommission)}</p>}
                     </div>
                 </div>
-                );
-            })}
-            </div>
+            )
+        })}
+      </div>
 
-            {/* Desktop View */}
-            <div className="hidden md:block bg-white rounded-lg shadow-md overflow-hidden">
-            <table className="w-full text-sm text-left text-gray-500">
-                <thead className="text-xs text-gray-700 uppercase bg-gray-50">
-                    <tr><th className="px-4 py-3">Last Update</th><th className="px-4 py-3">Trip/Load ID</th><th className="px-4 py-3">Details</th><th className="px-4 py-3">Financials</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Actions</th></tr>
-                </thead>
-                <tbody>
-                    {(filteredData as Trip[]).map(trip => {
-                        const { load, truck } = getTripDetails(trip);
-                        if (!load || !truck) return null;
-                        const lastEvent = trip.events[trip.events.length - 1];
-                        return (
-                            <tr key={trip.id} className="bg-white border-b hover:bg-gray-50">
-                                <td className="px-4 py-3 text-xs">{formatDateTime(lastEvent.timestamp)}</td>
-                                <td className="px-4 py-3 font-medium">#{trip.id.slice(-4)} / #{load.id.slice(-4)}</td>
-                                <td className="px-4 py-3"><p className="font-semibold">{truck.truckNumber}</p><p className="text-xs text-gray-500">{truck.driverName}</p></td>
-                                <td className="px-4 py-3 text-xs"><p>Client: {formatCurrency(load.clientFreight)}</p><p>Truck: {formatCurrency(trip.truckFreight)}</p></td>
-                                <td className="px-4 py-3">
-                                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${trip.status === TripStatus.Completed ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'}`}>{trip.status}</span>
-                                </td>
-                                <td className="px-4 py-3 flex items-center space-x-2">
-                                    {trip.status !== TripStatus.Completed && (<select onChange={(e) => handleUpdateTripStatus(trip, e.target.value as TripStatus)} value={trip.status} className="p-1 border rounded-md text-xs w-28 bg-white"><option value="" disabled>Update Status</option>{Object.values(TripStatus).map(s => <option key={s} value={s}>{s}</option>)}</select>)}
-                                    <button onClick={() => setViewingTrip(trip)} className="text-primary hover:underline text-xs font-semibold">Details</button>
-                                </td>
-                            </tr>
-                        );
-                    })}
-                </tbody>
-            </table>
-            </div>
-        </>
-      )}
-      {filteredData.length === 0 && <p className="text-center p-4 text-gray-500 bg-white rounded-lg shadow-md">No records found for this view.</p>}
+      {/* Desktop Table View */}
+      <div className="hidden md:block bg-white rounded-lg shadow-md overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-left text-gray-500">
+            <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+              <tr>
+                <th className="px-4 py-3">Trip ID</th>
+                <th className="px-4 py-3">Load ID</th>
+                <th className="px-4 py-3">Route</th>
+                <th className="px-4 py-3">Truck</th>
+                <th className="px-4 py-3">Driver</th>
+                <th className="px-4 py-3">Truck Freight</th>
+                <th className="px-4 py-3">Driver Commission</th>
+                <th className="px-4 py-3">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredTrips.map(trip => {
+                const load = loads.find(l => l.id === trip.loadId);
+                const truck = trucks.find(t => t.id === trip.truckId);
+                return (
+                  <tr key={trip.id} onClick={() => setSelectedTrip(trip)} className="bg-white border-b hover:bg-gray-50 cursor-pointer">
+                    <td className="px-4 py-3 font-medium">#{trip.id.slice(-4)}</td>
+                    <td className="px-4 py-3">#{load?.id.slice(-4)}</td>
+                    <td className="px-4 py-3">{load?.loadingLocation} &rarr; {load?.unloadingLocation}</td>
+                    <td className="px-4 py-3">{truck?.truckNumber}</td>
+                    <td className="px-4 py-3">{truck?.driverName}</td>
+                    <td className="px-4 py-3">{formatCurrency(trip.truckFreight)}</td>
+                    <td className="px-4 py-3">{formatCurrency(trip.driverCommission)}</td>
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(trip.status)}`}>
+                        {trip.status}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
       
-      {assigningLoad && (<Modal isOpen={!!assigningLoad} onClose={() => setAssigningLoad(undefined)} title="Assign Truck to Load"><AssignTripForm logisticsState={logisticsState} load={assigningLoad} onSave={addTrip} onClose={() => setAssigningLoad(undefined)} /></Modal>)}
-      {viewingTrip && tripDetailsForModal && (<TripDetailModal isOpen={!!viewingTrip} onClose={() => setViewingTrip(undefined)} trip={viewingTrip} load={tripDetailsForModal.load} truck={tripDetailsForModal.truck} client={tripDetailsForModal.client} transactions={tripDetailsForModal.tripTransactions} documents={tripDetailsForModal.tripDocuments} addTransaction={addTransaction} addDocument={addDocument}/>)}
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Assign Truck to a Load">
+        <TripForm logisticsState={logisticsState} onSave={handleSaveTrip} onClose={() => setIsModalOpen(false)} />
+      </Modal>
+
+      {selectedTrip && (
+        <TripDetailModal
+            isOpen={!!selectedTrip}
+            onClose={() => setSelectedTrip(undefined)}
+            trip={selectedTrip}
+            logisticsState={logisticsState}
+        />
+      )}
     </div>
   );
 };

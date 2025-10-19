@@ -1,6 +1,6 @@
 
 import type { Client, Load, Truck, Trip, Transaction, TripEvent, LoadTemplate, Document } from './types';
-import { LoadStatus, TripStatus, TransactionType, PaymentMode, PaymentStatus, WeightUnit, TransactionPurpose } from './types';
+import { LoadStatus, TripStatus, TransactionType, PaymentMode, PaymentStatus, WeightUnit, TransactionPurpose, LoadPriority } from './types';
 
 export const initialClients: Client[] = [
   { id: 'cli1', name: 'Global Concrete Inc.', phoneNumber: '555-0101' },
@@ -9,11 +9,11 @@ export const initialClients: Client[] = [
 ];
 
 export const initialLoads: Load[] = [
-  { id: 'load1', clientId: 'cli1', loadingLocation: 'Mumbai Port', unloadingLocation: 'Pune Warehouse', materialDescription: 'Cement Bags', materialWeight: 20, weightUnit: WeightUnit.Tons, clientFreight: 50000, status: LoadStatus.Open, createdAt: new Date('2024-07-20T10:00:00Z') },
-  { id: 'load2', clientId: 'cli2', loadingLocation: 'Factory A, Delhi', unloadingLocation: 'Site B, Gurgaon', materialDescription: 'Steel Rods', materialWeight: 15, weightUnit: WeightUnit.Tons, clientFreight: 35000, status: LoadStatus.Assigned, createdAt: new Date('2024-07-21T11:00:00Z') },
-  { id: 'load3', clientId: 'cli3', loadingLocation: 'Farmville, Punjab', unloadingLocation: 'Market, Delhi', materialDescription: 'Wheat Grain', materialWeight: 25000, weightUnit: WeightUnit.Kg, clientFreight: 60000, status: LoadStatus.InTransit, createdAt: new Date('2024-07-22T09:30:00Z') },
-  { id: 'load4', clientId: 'cli1', loadingLocation: 'Chennai Plant', unloadingLocation: 'Bangalore Site', materialDescription: 'Ready-Mix Concrete', materialWeight: 18, weightUnit: WeightUnit.Tons, clientFreight: 45000, status: LoadStatus.Completed, createdAt: new Date('2024-07-18T14:00:00Z') },
-  { id: 'load5', clientId: 'cli2', loadingLocation: 'Jaipur Depot', unloadingLocation: 'Agra Factory', materialDescription: 'Iron Plates', materialWeight: 22, weightUnit: WeightUnit.Tons, clientFreight: 52000, status: LoadStatus.Open, createdAt: new Date('2024-07-23T08:00:00Z') },
+  { id: 'load1', clientId: 'cli1', loadingLocation: 'Mumbai Port', unloadingLocation: 'Pune Warehouse', materialDescription: 'Cement Bags', materialWeight: 20, weightUnit: WeightUnit.Tons, clientFreight: 50000, status: LoadStatus.Open, priority: LoadPriority.Medium, createdAt: new Date('2024-07-20T10:00:00Z') },
+  { id: 'load2', clientId: 'cli2', loadingLocation: 'Factory A, Delhi', unloadingLocation: 'Site B, Gurgaon', materialDescription: 'Steel Rods', materialWeight: 15, weightUnit: WeightUnit.Tons, clientFreight: 35000, status: LoadStatus.Assigned, priority: LoadPriority.High, createdAt: new Date('2024-07-21T11:00:00Z') },
+  { id: 'load3', clientId: 'cli3', loadingLocation: 'Farmville, Punjab', unloadingLocation: 'Market, Delhi', materialDescription: 'Wheat Grain', materialWeight: 25000, weightUnit: WeightUnit.Kg, clientFreight: 60000, status: LoadStatus.InTransit, priority: LoadPriority.High, createdAt: new Date('2024-07-22T09:30:00Z') },
+  { id: 'load4', clientId: 'cli1', loadingLocation: 'Chennai Plant', unloadingLocation: 'Bangalore Site', materialDescription: 'Ready-Mix Concrete', materialWeight: 18, weightUnit: WeightUnit.Tons, clientFreight: 45000, status: LoadStatus.Completed, priority: LoadPriority.Low, createdAt: new Date('2024-07-18T14:00:00Z') },
+  { id: 'load5', clientId: 'cli2', loadingLocation: 'Jaipur Depot', unloadingLocation: 'Agra Factory', materialDescription: 'Iron Plates', materialWeight: 22, weightUnit: WeightUnit.Tons, clientFreight: 52000, status: LoadStatus.Open, priority: LoadPriority.Medium, createdAt: new Date('2024-07-23T08:00:00Z') },
 ];
 
 export const initialTrucks: Truck[] = [

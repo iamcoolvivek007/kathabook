@@ -1,7 +1,8 @@
+
 import React, { useState, useMemo } from 'react';
 import type { LogisticsState } from '../hooks/useLogisticsState';
 import type { Load, LoadTemplate } from '../types';
-import { LoadStatus, WeightUnit } from '../types';
+import { LoadStatus, WeightUnit, LoadPriority } from '../types';
 import { formatCurrency, formatDate } from '../utils/helpers';
 import Modal from './Modal';
 import PageHeader from './PageHeader';
@@ -25,6 +26,7 @@ const LoadForm: React.FC<{
     weightUnit: loadToEdit?.weightUnit || WeightUnit.Tons,
     clientFreight: loadToEdit?.clientFreight || 0,
     status: loadToEdit?.status || LoadStatus.Open,
+    priority: loadToEdit?.priority || LoadPriority.Medium,
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -83,6 +85,14 @@ const LoadForm: React.FC<{
             </select>
           </div>
         </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Priority</label>
+          <select name="priority" value={formData.priority} onChange={handleChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-white focus:ring-primary focus:border-primary">
+            {Object.values(LoadPriority).map(priority => (
+              <option key={priority} value={priority}>{priority}</option>
+            ))}
+          </select>
+        </div>
          <div>
           <label className="block text-sm font-medium text-gray-700">Status</label>
           <select name="status" value={formData.status} onChange={handleChange} className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 bg-white focus:ring-primary focus:border-primary">
@@ -107,6 +117,7 @@ const LoadManagement: React.FC<LoadManagementProps> = ({ logisticsState }) => {
   const [loadToEdit, setLoadToEdit] = useState<Load | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<LoadStatus | 'all'>('all');
+  const [priorityFilter, setPriorityFilter] = useState<'all' | LoadPriority>('all');
 
   const { loads, clients, addLoad, updateLoad, deleteLoad, loadTemplates, addLoadTemplate } = logisticsState;
 
@@ -171,10 +182,11 @@ const LoadManagement: React.FC<LoadManagementProps> = ({ logisticsState }) => {
           load.materialDescription.toLowerCase().includes(searchTerm.toLowerCase());
 
         const statusMatch = statusFilter === 'all' || load.status === statusFilter;
+        const priorityMatch = priorityFilter === 'all' || load.priority === priorityFilter;
 
-        return searchMatch && statusMatch;
+        return searchMatch && statusMatch && priorityMatch;
       });
-  }, [loads, clients, searchTerm, statusFilter]);
+  }, [loads, clients, searchTerm, statusFilter, priorityFilter]);
 
   const AddLoadButton: React.FC = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -218,13 +230,22 @@ const LoadManagement: React.FC<LoadManagementProps> = ({ logisticsState }) => {
     }
   }
 
+  const getPriorityColor = (priority: LoadPriority) => {
+    switch (priority) {
+      case LoadPriority.High: return 'bg-danger/10 text-danger';
+      case LoadPriority.Medium: return 'bg-warning/10 text-warning';
+      case LoadPriority.Low: return 'bg-primary/10 text-primary';
+      default: return 'bg-gray-200 text-gray-800';
+    }
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Load Management"
         actionButton={<AddLoadButton />}
       >
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white p-4 rounded-lg shadow-sm border">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-white p-4 rounded-lg shadow-sm border">
             <div className="md:col-span-2">
                 <label htmlFor="search-loads" className="sr-only">Search</label>
                 <input
@@ -250,6 +271,20 @@ const LoadManagement: React.FC<LoadManagementProps> = ({ logisticsState }) => {
                     ))}
                 </select>
             </div>
+             <div>
+                <label htmlFor="priority-filter" className="sr-only">Filter by Priority</label>
+                <select
+                    id="priority-filter"
+                    value={priorityFilter}
+                    onChange={e => setPriorityFilter(e.target.value as LoadPriority | 'all')}
+                    className="w-full p-2 border border-gray-300 rounded-md shadow-sm bg-white focus:ring-primary focus:border-primary"
+                >
+                    <option value="all">All Priorities</option>
+                    {Object.values(LoadPriority).map(p => (
+                        <option key={p} value={p}>{p} Priority</option>
+                    ))}
+                </select>
+            </div>
         </div>
       </PageHeader>
       
@@ -262,9 +297,14 @@ const LoadManagement: React.FC<LoadManagementProps> = ({ logisticsState }) => {
                         <p className="font-bold text-dark">#{load.id.slice(-6)}</p>
                         <p className="text-sm text-medium">{getClientName(load.clientId)}</p>
                     </div>
-                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(load.status)}`}>
-                        {load.status}
-                    </span>
+                    <div className="flex flex-col items-end gap-y-2">
+                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(load.status)}`}>
+                            {load.status}
+                        </span>
+                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getPriorityColor(load.priority)}`}>
+                            {load.priority} Priority
+                        </span>
+                    </div>
                 </div>
                 <div className="mt-4 space-y-2 text-sm">
                     <p><span className="font-semibold">Route:</span> {load.loadingLocation} &rarr; {load.unloadingLocation}</p>
@@ -293,6 +333,7 @@ const LoadManagement: React.FC<LoadManagementProps> = ({ logisticsState }) => {
                 <th scope="col" className="px-4 py-3">Material</th>
                 <th scope="col" className="px-4 py-3">Freight</th>
                 <th scope="col" className="px-4 py-3">Status</th>
+                <th scope="col" className="px-4 py-3">Priority</th>
                 <th scope="col" className="px-4 py-3">Actions</th>
               </tr>
             </thead>
@@ -308,6 +349,11 @@ const LoadManagement: React.FC<LoadManagementProps> = ({ logisticsState }) => {
                   <td className="px-4 py-3">
                     <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(load.status)}`}>
                       {load.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getPriorityColor(load.priority)}`}>
+                      {load.priority}
                     </span>
                   </td>
                   <td className="px-4 py-3 flex space-x-2 text-xs">

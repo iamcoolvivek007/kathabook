@@ -44,6 +44,12 @@ export enum WeightUnit {
     Kg = 'Kg'
 }
 
+export enum LoadPriority {
+  Low = 'Low',
+  Medium = 'Medium',
+  High = 'High',
+}
+
 export interface Client {
   id: string;
   name: string;
@@ -60,6 +66,7 @@ export interface Load {
   weightUnit: WeightUnit;
   clientFreight: number;
   status: LoadStatus;
+  priority: LoadPriority;
   createdAt: Date;
 }
 
@@ -120,6 +127,7 @@ export interface LoadTemplate {
   materialWeight: number;
   weightUnit: WeightUnit;
   clientFreight: number;
+  priority: LoadPriority;
 }
 
 export interface Document {
