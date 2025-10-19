@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import type { LogisticsState } from '../hooks/useLogisticsState';
 import type { Truck, Client } from '../types';
@@ -56,27 +55,27 @@ const TruckForm: React.FC<{
       <fieldset className="space-y-4 p-4 border rounded-md">
         <legend className="text-lg font-medium text-gray-900 px-2">Vehicle & Owner</legend>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div><label className="block text-sm font-medium">Truck Number</label><input type="text" name="truckNumber" value={formData.truckNumber} onChange={handleChange} required className="mt-1 block w-full border border-gray-300 rounded-md p-2"/></div>
-          <div><label className="block text-sm font-medium">Truck Type</label><input type="text" name="truckType" value={formData.truckType} onChange={handleChange} required className="mt-1 block w-full border border-gray-300 rounded-md p-2"/></div>
-          <div><label className="block text-sm font-medium">Owner Name</label><input type="text" name="ownerName" value={formData.ownerName} onChange={handleChange} required className="mt-1 block w-full border border-gray-300 rounded-md p-2"/></div>
-          <div><label className="block text-sm font-medium">Owner Contact</label><input type="text" name="ownerContact" value={formData.ownerContact} onChange={handleChange} required className="mt-1 block w-full border border-gray-300 rounded-md p-2"/></div>
+          <div><label className="block text-sm font-medium">Truck Number</label><input type="text" name="truckNumber" value={formData.truckNumber} onChange={handleChange} required className="mt-1 block w-full border border-gray-300 rounded-md p-2 bg-white focus:ring-primary focus:border-primary"/></div>
+          <div><label className="block text-sm font-medium">Truck Type</label><input type="text" name="truckType" value={formData.truckType} onChange={handleChange} required className="mt-1 block w-full border border-gray-300 rounded-md p-2 bg-white focus:ring-primary focus:border-primary"/></div>
+          <div><label className="block text-sm font-medium">Owner Name</label><input type="text" name="ownerName" value={formData.ownerName} onChange={handleChange} required className="mt-1 block w-full border border-gray-300 rounded-md p-2 bg-white focus:ring-primary focus:border-primary"/></div>
+          <div><label className="block text-sm font-medium">Owner Contact</label><input type="text" name="ownerContact" value={formData.ownerContact} onChange={handleChange} required className="mt-1 block w-full border border-gray-300 rounded-md p-2 bg-white focus:ring-primary focus:border-primary"/></div>
         </div>
       </fieldset>
       
       <fieldset className="space-y-4 p-4 border rounded-md">
         <legend className="text-lg font-medium text-gray-900 px-2">Driver Details</legend>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div><label className="block text-sm font-medium">Driver Name</label><input type="text" name="driverName" value={formData.driverName} onChange={handleChange} required className="mt-1 block w-full border border-gray-300 rounded-md p-2"/></div>
-          <div><label className="block text-sm font-medium">Driver Phone Number</label><input type="text" name="driverPhoneNumber" value={formData.driverPhoneNumber} onChange={handleChange} required className="mt-1 block w-full border border-gray-300 rounded-md p-2"/></div>
-          <div><label className="block text-sm font-medium">PAN Card</label><input type="text" name="panCard" value={formData.panCard} onChange={handleChange} className="mt-1 block w-full border border-gray-300 rounded-md p-2"/></div>
+          <div><label className="block text-sm font-medium">Driver Name</label><input type="text" name="driverName" value={formData.driverName} onChange={handleChange} required className="mt-1 block w-full border border-gray-300 rounded-md p-2 bg-white focus:ring-primary focus:border-primary"/></div>
+          <div><label className="block text-sm font-medium">Driver Phone Number</label><input type="text" name="driverPhoneNumber" value={formData.driverPhoneNumber} onChange={handleChange} required className="mt-1 block w-full border border-gray-300 rounded-md p-2 bg-white focus:ring-primary focus:border-primary"/></div>
+          <div><label className="block text-sm font-medium">PAN Card</label><input type="text" name="panCard" value={formData.panCard} onChange={handleChange} className="mt-1 block w-full border border-gray-300 rounded-md p-2 bg-white focus:ring-primary focus:border-primary"/></div>
         </div>
       </fieldset>
 
       <fieldset className="space-y-4 p-4 border rounded-md">
         <legend className="text-lg font-medium text-gray-900 px-2">Bank Details</legend>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div><label className="block text-sm font-medium">Bank Account Number</label><input type="text" name="bankAccountNumber" value={formData.bankAccountNumber} onChange={handleChange} className="mt-1 block w-full border border-gray-300 rounded-md p-2"/></div>
-            <div><label className="block text-sm font-medium">IFSC Code</label><input type="text" name="bankIfscCode" value={formData.bankIfscCode} onChange={handleChange} className="mt-1 block w-full border border-gray-300 rounded-md p-2"/></div>
+            <div><label className="block text-sm font-medium">Bank Account Number</label><input type="text" name="bankAccountNumber" value={formData.bankAccountNumber} onChange={handleChange} className="mt-1 block w-full border border-gray-300 rounded-md p-2 bg-white focus:ring-primary focus:border-primary"/></div>
+            <div><label className="block text-sm font-medium">IFSC Code</label><input type="text" name="bankIfscCode" value={formData.bankIfscCode} onChange={handleChange} className="mt-1 block w-full border border-gray-300 rounded-md p-2 bg-white focus:ring-primary focus:border-primary"/></div>
         </div>
       </fieldset>
 
@@ -127,8 +126,8 @@ const ClientForm: React.FC<{
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div><label className="block text-sm font-medium">Client Name</label><input type="text" name="name" value={formData.name} onChange={handleChange} required className="mt-1 block w-full border border-gray-300 rounded-md p-2"/></div>
-        <div><label className="block text-sm font-medium">Phone Number</label><input type="text" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} required className="mt-1 block w-full border border-gray-300 rounded-md p-2"/></div>
+        <div><label className="block text-sm font-medium">Client Name</label><input type="text" name="name" value={formData.name} onChange={handleChange} required className="mt-1 block w-full border border-gray-300 rounded-md p-2 bg-white focus:ring-primary focus:border-primary"/></div>
+        <div><label className="block text-sm font-medium">Phone Number</label><input type="text" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} required className="mt-1 block w-full border border-gray-300 rounded-md p-2 bg-white focus:ring-primary focus:border-primary"/></div>
       </div>
       <div className="flex justify-end pt-4 space-x-2">
         <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-md">Cancel</button>
@@ -182,7 +181,7 @@ const FleetManagement: React.FC<{ logisticsState: LogisticsState }> = ({ logisti
       <PageHeader
         title="Fleet & Client Management"
         actionButton={
-          <button onClick={() => handleOpenModal()} className="px-4 py-2 bg-primary text-white rounded-md flex items-center shadow-sm">
+          <button onClick={() => handleOpenModal()} className="px-4 py-2 bg-primary text-white rounded-md flex items-center shadow-sm hover:bg-primary/90">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" /></svg>
             Add New {getTabTitle()}
           </button>
@@ -194,7 +193,7 @@ const FleetManagement: React.FC<{ logisticsState: LogisticsState }> = ({ logisti
               placeholder={`Search ${activeTab}...`}
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-md shadow-sm"
+              className="w-full p-2 border border-gray-300 rounded-md shadow-sm bg-white focus:ring-primary focus:border-primary"
           />
         </div>
       </PageHeader>
@@ -202,14 +201,38 @@ const FleetManagement: React.FC<{ logisticsState: LogisticsState }> = ({ logisti
       <div>
         <div className="border-b border-gray-200">
           <nav className="-mb-px flex space-x-8" aria-label="Tabs">
-            <button onClick={() => {setActiveTab('trucks'); setSearchTerm('');}} className={`${activeTab === 'trucks' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}>Truck Records</button>
-            <button onClick={() => {setActiveTab('clients'); setSearchTerm('');}} className={`${activeTab === 'clients' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}>Client Records</button>
+            <button onClick={() => {setActiveTab('trucks'); setSearchTerm('');}} className={`${activeTab === 'trucks' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}>Truck Records</button>
+            <button onClick={() => {setActiveTab('clients'); setSearchTerm('');}} className={`${activeTab === 'clients' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}>Client Records</button>
           </nav>
         </div>
       </div>
       
-      <div className="bg-white p-4 rounded-lg shadow-md">
-        {activeTab === 'trucks' && (
+      {activeTab === 'trucks' && (
+        <>
+        {/* Mobile View */}
+        <div className="space-y-4 md:hidden">
+            {filteredTrucks.map(truck => (
+                <div key={truck.id} className="bg-white p-4 rounded-lg shadow-md border">
+                    <div className="flex items-center space-x-4">
+                        {truck.truckImageUrl ? <img src={truck.truckImageUrl} alt={truck.truckNumber} className="h-12 w-12 rounded-md object-cover" /> : <div className="h-12 w-12 bg-gray-200 rounded-md flex-shrink-0"></div>}
+                        <div>
+                            <p className="font-bold text-dark">{truck.truckNumber}</p>
+                            <p className="text-sm text-medium">{truck.truckType}</p>
+                        </div>
+                    </div>
+                    <div className="mt-4 space-y-2 text-sm">
+                        <p><span className="font-semibold">Driver:</span> {truck.driverName} ({truck.driverPhoneNumber})</p>
+                        <p><span className="font-semibold">Owner:</span> {truck.ownerName}</p>
+                    </div>
+                    <div className="mt-4 pt-2 border-t flex justify-end space-x-4 text-sm font-medium">
+                        <button onClick={() => handleOpenModal(truck)} className="text-primary hover:underline">Edit</button>
+                        <button onClick={() => deleteTruck(truck.id)} className="text-danger hover:underline">Delete</button>
+                    </div>
+                </div>
+            ))}
+        </div>
+        {/* Desktop View */}
+        <div className="hidden md:block bg-white rounded-lg shadow-md overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left text-gray-500">
               <thead className="text-xs text-gray-700 uppercase bg-gray-50">
@@ -240,33 +263,55 @@ const FleetManagement: React.FC<{ logisticsState: LogisticsState }> = ({ logisti
               </tbody>
             </table>
           </div>
-        )}
-        {activeTab === 'clients' && (
-            <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left text-gray-500">
-                    <thead className="text-xs text-gray-700 uppercase bg-gray-50">
-                        <tr>
-                            <th className="px-6 py-3">Client Name</th>
-                            <th className="px-6 py-3">Phone Number</th>
-                            <th className="px-6 py-3">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredClients.map(client => (
-                            <tr key={client.id} className="bg-white border-b hover:bg-gray-50">
-                                <td className="px-6 py-4 font-medium">{client.name}</td>
-                                <td className="px-6 py-4">{client.phoneNumber}</td>
-                                <td className="px-6 py-4 flex space-x-2">
-                                    <button onClick={() => handleOpenModal(client)} className="text-primary hover:underline">Edit</button>
-                                    <button onClick={() => deleteClient(client.id)} className="text-danger hover:underline">Delete</button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+        </div>
+        </>
+      )}
+
+      {activeTab === 'clients' && (
+        <>
+            {/* Mobile View */}
+            <div className="space-y-4 md:hidden">
+                {filteredClients.map(client => (
+                    <div key={client.id} className="bg-white p-4 rounded-lg shadow-md border">
+                        <div>
+                            <p className="font-bold text-dark">{client.name}</p>
+                            <p className="text-sm text-medium">{client.phoneNumber}</p>
+                        </div>
+                        <div className="mt-4 pt-2 border-t flex justify-end space-x-4 text-sm font-medium">
+                            <button onClick={() => handleOpenModal(client)} className="text-primary hover:underline">Edit</button>
+                            <button onClick={() => deleteClient(client.id)} className="text-danger hover:underline">Delete</button>
+                        </div>
+                    </div>
+                ))}
             </div>
-        )}
-      </div>
+            {/* Desktop View */}
+            <div className="hidden md:block bg-white rounded-lg shadow-md overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-sm text-left text-gray-500">
+                        <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                            <tr>
+                                <th className="px-6 py-3">Client Name</th>
+                                <th className="px-6 py-3">Phone Number</th>
+                                <th className="px-6 py-3">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filteredClients.map(client => (
+                                <tr key={client.id} className="bg-white border-b hover:bg-gray-50">
+                                    <td className="px-6 py-4 font-medium">{client.name}</td>
+                                    <td className="px-6 py-4">{client.phoneNumber}</td>
+                                    <td className="px-6 py-4 flex space-x-2">
+                                        <button onClick={() => handleOpenModal(client)} className="text-primary hover:underline">Edit</button>
+                                        <button onClick={() => deleteClient(client.id)} className="text-danger hover:underline">Delete</button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </>
+      )}
 
       <Modal isOpen={isModalOpen} onClose={handleCloseModal} title={editingItem ? `Edit ${getTabTitle()}` : `Add New ${getTabTitle()}`} maxWidth="max-w-4xl">
         {activeTab === 'trucks' ? (

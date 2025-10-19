@@ -35,7 +35,7 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-light text-dark">
       <Header currentView={currentView} setCurrentView={setCurrentView} />
-      <main className="p-4 sm:p-6 lg:p-8">
+      <main className="container mx-auto p-4 sm:p-6 lg:p-8">
         {renderView()}
       </main>
     </div>

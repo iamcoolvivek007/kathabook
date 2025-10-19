@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import type { LogisticsState } from '../hooks/useLogisticsState';
 import type { Load, Trip } from '../types';
@@ -47,16 +46,16 @@ const AssignTripForm: React.FC<{
         <p className="text-sm text-gray-500">{load.loadingLocation} to {load.unloadingLocation}</p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
+        <div className="md:col-span-2">
           <label className="block text-sm font-medium">Truck</label>
-          <select name="truckId" value={formData.truckId} onChange={handleChange} required className="mt-1 block w-full p-2 border rounded-md">
+          <select name="truckId" value={formData.truckId} onChange={handleChange} required className="mt-1 block w-full p-2 border rounded-md bg-white focus:ring-primary focus:border-primary">
             <option value="">Select Truck</option>
             {trucks.map(t => <option key={t.id} value={t.id}>{t.truckNumber} ({t.driverName})</option>)}
           </select>
           {selectedTruck && <p className="text-xs text-gray-500 mt-1">Driver: {selectedTruck.driverName}</p>}
         </div>
-        <div><label className="block text-sm font-medium">Truck Freight</label><input type="number" name="truckFreight" value={formData.truckFreight} onChange={handleChange} required className="mt-1 block w-full p-2 border rounded-md"/></div>
-        <div className="md:col-span-2"><label className="block text-sm font-medium">Driver Commission</label><input type="number" name="driverCommission" value={formData.driverCommission} onChange={handleChange} required className="mt-1 block w-full p-2 border rounded-md"/></div>
+        <div><label className="block text-sm font-medium">Truck Freight</label><input type="number" name="truckFreight" value={formData.truckFreight} onChange={handleChange} required className="mt-1 block w-full p-2 border rounded-md bg-white focus:ring-primary focus:border-primary"/></div>
+        <div><label className="block text-sm font-medium">Driver Commission</label><input type="number" name="driverCommission" value={formData.driverCommission} onChange={handleChange} required className="mt-1 block w-full p-2 border rounded-md bg-white focus:ring-primary focus:border-primary"/></div>
       </div>
       <div className="flex justify-end pt-4 space-x-2">
         <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-md">Cancel</button>
@@ -81,6 +80,18 @@ const TripManagement: React.FC<{ logisticsState: LogisticsState }> = ({ logistic
 
   const filteredData = useMemo(() => {
     const lowerSearchTerm = searchTerm.toLowerCase();
+    
+    if (activeTab === 'assignment') {
+        return loads
+        .filter(l => l.status === LoadStatus.Open)
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+        .filter(load => 
+            load.loadingLocation.toLowerCase().includes(lowerSearchTerm) ||
+            load.unloadingLocation.toLowerCase().includes(lowerSearchTerm) ||
+            load.materialDescription.toLowerCase().includes(lowerSearchTerm)
+        );
+    }
+
     const searchFilter = (trip: Trip) => {
       if (!lowerSearchTerm) return true;
       const { load, truck, client } = getTripDetails(trip);
@@ -94,12 +105,6 @@ const TripManagement: React.FC<{ logisticsState: LogisticsState }> = ({ logistic
         load?.unloadingLocation.toLowerCase().includes(lowerSearchTerm)
       );
     };
-
-    if (activeTab === 'assignment') {
-      return loads
-        .filter(l => l.status === LoadStatus.Open)
-        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-    }
     
     let filteredTrips: Trip[] = [];
     if (activeTab === 'active') {
@@ -138,45 +143,73 @@ const TripManagement: React.FC<{ logisticsState: LogisticsState }> = ({ logistic
       <PageHeader
         title="Trip Management"
         actionButton={activeTab === 'assignment' ? (
-             <button onClick={() => alert('Add load from Load Management page')} className="px-4 py-2 bg-primary text-white rounded-md hover:brightness-95 flex items-center shadow-sm">
+             <button onClick={() => alert('Add load from Load Management page')} className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 flex items-center shadow-sm">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" /></svg>
                 Add New Load
             </button>
         ) : undefined}
       >
-        {activeTab !== 'assignment' && (
-          <div className="bg-white p-4 rounded-lg shadow-sm border">
-            <input type="text" placeholder="Search trips by ID, truck, driver, client, route..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full p-2 border border-gray-300 rounded-md shadow-sm" />
-          </div>
-        )}
+        <div className="bg-white p-4 rounded-lg shadow-sm border">
+            <input type="text" placeholder={activeTab === 'assignment' ? "Search unassigned loads..." : "Search trips by ID, truck, driver..."} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full p-2 border border-gray-300 rounded-md shadow-sm bg-white focus:ring-primary focus:border-primary" />
+        </div>
       </PageHeader>
       
       <div className="border-b border-gray-200">
           <nav className="-mb-px flex space-x-8" aria-label="Tabs">
-            <button onClick={() => { setActiveTab('active'); setSearchTerm(''); }} className={`${activeTab === 'active' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}>Active Trips</button>
-            <button onClick={() => { setActiveTab('assignment'); setSearchTerm(''); }} className={`${activeTab === 'assignment' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}>Needs Assignment</button>
-            <button onClick={() => { setActiveTab('completed'); setSearchTerm(''); }} className={`${activeTab === 'completed' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}>Completed Trips</button>
+            <button onClick={() => { setActiveTab('active'); setSearchTerm(''); }} className={`${activeTab === 'active' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}>Active Trips</button>
+            <button onClick={() => { setActiveTab('assignment'); setSearchTerm(''); }} className={`${activeTab === 'assignment' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}>Needs Assignment</button>
+            <button onClick={() => { setActiveTab('completed'); setSearchTerm(''); }} className={`${activeTab === 'completed' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'} whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}>Completed Trips</button>
           </nav>
       </div>
       
-      <div className="bg-white p-4 rounded-lg shadow-md">
-        <div className="overflow-x-auto">
-          {activeTab === 'assignment' ? (
-              <table className="w-full text-sm text-left text-gray-500">
-                <thead className="text-xs text-gray-700 uppercase bg-gray-50">
-                  <tr><th className="px-4 py-3">Load ID</th><th className="px-4 py-3">Route</th><th className="px-4 py-3">Material</th><th className="px-4 py-3">Action</th></tr>
-                </thead>
-                <tbody>
-                  {(filteredData as Load[]).map(load => (
-                    <tr key={load.id} className="bg-white border-b hover:bg-gray-50">
-                      <td className="px-4 py-3 font-medium">#{load.id.slice(-6)}</td><td className="px-4 py-3">{load.loadingLocation} &rarr; {load.unloadingLocation}</td>
-                      <td className="px-4 py-3">{load.materialDescription}</td>
-                      <td className="px-4 py-3"><button onClick={() => setAssigningLoad(load)} className="px-3 py-1 bg-secondary text-white text-xs font-semibold rounded-md hover:brightness-95">Assign Truck</button></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-          ) : (
+      {activeTab === 'assignment' ? (
+          <div className="space-y-4">
+            {(filteredData as Load[]).map(load => (
+                <div key={load.id} className="bg-white p-4 rounded-lg shadow-md border">
+                    <p className="font-bold text-dark">#{load.id.slice(-6)}</p>
+                    <p className="mt-2"><span className="font-semibold">Route:</span> {load.loadingLocation} &rarr; {load.unloadingLocation}</p>
+                    <p className="text-sm"><span className="font-semibold">Material:</span> {load.materialDescription}</p>
+                    <div className="mt-4 pt-2 border-t flex justify-end">
+                        <button onClick={() => setAssigningLoad(load)} className="px-4 py-2 bg-secondary text-white text-sm font-semibold rounded-md hover:bg-secondary/90">Assign Truck</button>
+                    </div>
+                </div>
+            ))}
+          </div>
+      ) : (
+        <>
+            {/* Mobile View */}
+            <div className="space-y-4 md:hidden">
+            {(filteredData as Trip[]).map(trip => {
+                const { load, truck } = getTripDetails(trip);
+                if (!load || !truck) return null;
+                const lastEvent = trip.events[trip.events.length - 1];
+                return (
+                <div key={trip.id} className="bg-white p-4 rounded-lg shadow-md border">
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <p className="font-bold text-dark">#{trip.id.slice(-4)} / #{load.id.slice(-4)}</p>
+                            <p className="text-sm text-medium">{truck.truckNumber}</p>
+                        </div>
+                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${trip.status === TripStatus.Completed ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'}`}>{trip.status}</span>
+                    </div>
+                    <p className="text-sm mt-2"><span className="font-semibold">Driver:</span> {truck.driverName}</p>
+                    <p className="text-xs text-medium">Last Update: {formatDateTime(lastEvent.timestamp)}</p>
+                    <div className="mt-4 pt-4 border-t space-y-2">
+                        {trip.status !== TripStatus.Completed && (
+                            <select onChange={(e) => handleUpdateTripStatus(trip, e.target.value as TripStatus)} value={trip.status} className="p-2 border rounded-md text-sm w-full bg-white focus:ring-primary focus:border-primary">
+                                <option value="" disabled>Update Status</option>
+                                {Object.values(TripStatus).map(s => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                        )}
+                        <button onClick={() => setViewingTrip(trip)} className="w-full text-center px-4 py-2 bg-primary/10 text-primary text-sm font-semibold rounded-md hover:bg-primary/20">View Details</button>
+                    </div>
+                </div>
+                );
+            })}
+            </div>
+
+            {/* Desktop View */}
+            <div className="hidden md:block bg-white rounded-lg shadow-md overflow-hidden">
             <table className="w-full text-sm text-left text-gray-500">
                 <thead className="text-xs text-gray-700 uppercase bg-gray-50">
                     <tr><th className="px-4 py-3">Last Update</th><th className="px-4 py-3">Trip/Load ID</th><th className="px-4 py-3">Details</th><th className="px-4 py-3">Financials</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Actions</th></tr>
@@ -196,7 +229,7 @@ const TripManagement: React.FC<{ logisticsState: LogisticsState }> = ({ logistic
                                     <span className={`px-2 py-1 text-xs font-semibold rounded-full ${trip.status === TripStatus.Completed ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'}`}>{trip.status}</span>
                                 </td>
                                 <td className="px-4 py-3 flex items-center space-x-2">
-                                    {trip.status !== TripStatus.Completed && (<select onChange={(e) => handleUpdateTripStatus(trip, e.target.value as TripStatus)} value={trip.status} className="p-1 border rounded-md text-xs w-28"><option value="" disabled>Update Status</option>{Object.values(TripStatus).map(s => <option key={s} value={s}>{s}</option>)}</select>)}
+                                    {trip.status !== TripStatus.Completed && (<select onChange={(e) => handleUpdateTripStatus(trip, e.target.value as TripStatus)} value={trip.status} className="p-1 border rounded-md text-xs w-28 bg-white"><option value="" disabled>Update Status</option>{Object.values(TripStatus).map(s => <option key={s} value={s}>{s}</option>)}</select>)}
                                     <button onClick={() => setViewingTrip(trip)} className="text-primary hover:underline text-xs font-semibold">Details</button>
                                 </td>
                             </tr>
@@ -204,10 +237,10 @@ const TripManagement: React.FC<{ logisticsState: LogisticsState }> = ({ logistic
                     })}
                 </tbody>
             </table>
-          )}
-           {filteredData.length === 0 && <p className="text-center p-4 text-gray-500">No records found for this view.</p>}
-        </div>
-      </div>
+            </div>
+        </>
+      )}
+      {filteredData.length === 0 && <p className="text-center p-4 text-gray-500 bg-white rounded-lg shadow-md">No records found for this view.</p>}
       
       {assigningLoad && (<Modal isOpen={!!assigningLoad} onClose={() => setAssigningLoad(undefined)} title="Assign Truck to Load"><AssignTripForm logisticsState={logisticsState} load={assigningLoad} onSave={addTrip} onClose={() => setAssigningLoad(undefined)} /></Modal>)}
       {viewingTrip && tripDetailsForModal && (<TripDetailModal isOpen={!!viewingTrip} onClose={() => setViewingTrip(undefined)} trip={viewingTrip} load={tripDetailsForModal.load} truck={tripDetailsForModal.truck} client={tripDetailsForModal.client} transactions={tripDetailsForModal.tripTransactions} documents={tripDetailsForModal.tripDocuments} addTransaction={addTransaction} addDocument={addDocument}/>)}

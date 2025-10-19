@@ -23,8 +23,15 @@ const Dashboard: React.FC<DashboardProps> = ({ logisticsState, setCurrentView })
   const activeTripsCount = activeTrips.length;
   
   // Financial Calculations
-  const totalClientRevenue = useMemo(() => loads.reduce((sum, load) => sum + load.clientFreight, 0), [loads]);
-  const totalCosts = useMemo(() => trips.reduce((sum, trip) => sum + trip.truckFreight + trip.driverCommission, 0), [trips]);
+  const totalRevenue = useMemo(() => {
+    return trips.reduce((sum, trip) => {
+        const load = loads.find(l => l.id === trip.loadId);
+        const clientFreight = load ? load.clientFreight : 0;
+        return sum + clientFreight + trip.driverCommission;
+    }, 0);
+  }, [trips, loads]);
+
+  const totalCosts = useMemo(() => trips.reduce((sum, trip) => sum + trip.truckFreight, 0), [trips]);
 
   const totalReceived = useMemo(() => transactions
     .filter(t => t.type === TransactionType.Credit && t.status === PaymentStatus.Completed)
@@ -34,7 +41,7 @@ const Dashboard: React.FC<DashboardProps> = ({ logisticsState, setCurrentView })
     .filter(t => t.type === TransactionType.Debit && t.status === PaymentStatus.Completed)
     .reduce((sum, t) => sum + t.amount, 0), [transactions]);
 
-  const totalClientDues = totalClientRevenue - totalReceived;
+  const totalReceivables = totalRevenue - totalReceived;
   const totalPayables = totalCosts - totalPaidOut;
   const cashInHand = totalReceived - totalPaidOut;
 
@@ -66,27 +73,38 @@ const Dashboard: React.FC<DashboardProps> = ({ logisticsState, setCurrentView })
     });
   };
 
-  const showClientDuesDetails = () => {
-      const dueDetails = loads.map(load => {
+  const showReceivablesDetails = () => {
+      const clientDues = loads.map(load => {
           const trip = trips.find(t => t.loadId === load.id);
           if (!trip) return null;
           const paid = transactions.filter(tx => tx.tripId === trip.id && tx.purpose === TransactionPurpose.ClientFreight).reduce((acc, tx) => acc + tx.amount, 0);
           const due = load.clientFreight - paid;
           if (due <= 0) return null;
           const client = clients.find(c => c.id === load.clientId);
-          return { clientName: client?.name, tripId: trip.id, total: load.clientFreight, paid, due };
-      }).filter(Boolean);
+          return { source: client?.name, type: 'Client Freight', tripId: trip.id, total: load.clientFreight, paid, due };
+      }).filter((item): item is NonNullable<typeof item> => item !== null);
+
+      const driverDues = trips.map(trip => {
+        const paid = transactions.filter(tx => tx.tripId === trip.id && tx.purpose === TransactionPurpose.DriverCommission).reduce((acc, tx) => acc + tx.amount, 0);
+        const due = trip.driverCommission - paid;
+        if (due <= 0 || trip.driverCommission <= 0) return null;
+        const truck = trucks.find(t => t.id === trip.truckId);
+        return { source: truck?.driverName, type: 'Driver Commission', tripId: trip.id, total: trip.driverCommission, paid, due };
+      }).filter((item): item is NonNullable<typeof item> => item !== null);
+
+      const allDues = [...clientDues, ...driverDues];
 
       setModalDetails({
-          title: 'Outstanding Client Dues',
+          title: 'Outstanding Receivables',
           content: (
               <div className="overflow-x-auto">
                   <table className="w-full text-sm text-left text-gray-500">
-                      <thead className="text-xs text-gray-700 uppercase bg-gray-50"><tr><th className="px-6 py-3">Client</th><th className="px-6 py-3">Trip ID</th><th className="px-6 py-3">Total Freight</th><th className="px-6 py-3">Paid</th><th className="px-6 py-3">Due</th></tr></thead>
+                      <thead className="text-xs text-gray-700 uppercase bg-gray-50"><tr><th className="px-6 py-3">Source</th><th className="px-6 py-3">Type</th><th className="px-6 py-3">Trip ID</th><th className="px-6 py-3">Total</th><th className="px-6 py-3">Paid</th><th className="px-6 py-3">Due</th></tr></thead>
                       <tbody>
-                          {dueDetails.map(item => item && (
-                              <tr key={item.tripId} className="bg-white border-b hover:bg-gray-50">
-                                  <td className="px-6 py-4 font-medium">{item.clientName}</td>
+                          {allDues.map(item => (
+                              <tr key={`${item.tripId}-${item.type}`} className="bg-white border-b hover:bg-gray-50">
+                                  <td className="px-6 py-4 font-medium">{item.source}</td>
+                                  <td className="px-6 py-4">{item.type}</td>
                                   <td className="px-6 py-4">#{item.tripId.slice(-4)}</td>
                                   <td className="px-6 py-4">{formatCurrency(item.total)}</td>
                                   <td className="px-6 py-4 text-success">{formatCurrency(item.paid)}</td>
@@ -101,21 +119,15 @@ const Dashboard: React.FC<DashboardProps> = ({ logisticsState, setCurrentView })
   }
   
   const showTruckDuesDetails = () => {
-    const dueDetails = trips.flatMap(trip => {
+    const dueDetails = trips.map(trip => {
       const truck = trucks.find(t => t.id === trip.truckId);
-      const dues = [];
       const freightPaid = transactions.filter(tx => tx.tripId === trip.id && tx.purpose === TransactionPurpose.TruckFreight).reduce((acc, tx) => acc + tx.amount, 0);
       const freightDue = trip.truckFreight - freightPaid;
       if (freightDue > 0) {
-        dues.push({ id: trip.id + '-freight', payee: truck?.ownerName, purpose: 'Truck Freight', total: trip.truckFreight, paid: freightPaid, due: freightDue });
+        return { id: trip.id + '-freight', payee: truck?.ownerName, purpose: 'Truck Freight', total: trip.truckFreight, paid: freightPaid, due: freightDue };
       }
-      const commissionPaid = transactions.filter(tx => tx.tripId === trip.id && tx.purpose === TransactionPurpose.DriverCommission).reduce((acc, tx) => acc + tx.amount, 0);
-      const commissionDue = trip.driverCommission - commissionPaid;
-      if (commissionDue > 0) {
-        dues.push({ id: trip.id + '-commission', payee: truck?.driverName, purpose: 'Driver Commission', total: trip.driverCommission, paid: commissionPaid, due: commissionDue });
-      }
-      return dues;
-    });
+      return null;
+    }).filter((item): item is NonNullable<typeof item> => item !== null);
 
     setModalDetails({
       title: 'Outstanding Truck/Driver Payments',
@@ -144,10 +156,10 @@ const Dashboard: React.FC<DashboardProps> = ({ logisticsState, setCurrentView })
     <div className="space-y-8">
       <h1 className="text-3xl font-bold text-dark">Dashboard</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <StatCard title="Active Trips" value={activeTripsCount} icon={<TruckIcon />} description="Trips currently in progress" onClick={showActiveTripsDetails} />
-        <StatCard title="Client Dues" value={formatCurrency(totalClientDues)} icon={<TrendingUpIcon />} description="Total outstanding from clients" onClick={showClientDuesDetails} />
-        <StatCard title="Truck/Driver Dues" value={formatCurrency(totalPayables)} icon={<TrendingDownIcon />} description="Total outstanding payments" onClick={showTruckDuesDetails} />
+        <StatCard title="Total Receivables" value={formatCurrency(totalReceivables)} icon={<TrendingUpIcon />} description="Outstanding from clients & drivers" onClick={showReceivablesDetails} />
+        <StatCard title="Truck/Driver Dues" value={formatCurrency(totalPayables)} icon={<TrendingDownIcon />} description="Outstanding payments" onClick={showTruckDuesDetails} />
         <StatCard title="Cash in Hand" value={formatCurrency(cashInHand)} icon={<CashIcon />} description="Net cash flow" />
       </div>
 
@@ -155,11 +167,11 @@ const Dashboard: React.FC<DashboardProps> = ({ logisticsState, setCurrentView })
         <div className="lg:col-span-1 bg-white p-6 rounded-lg shadow-md">
           <h2 className="text-xl font-semibold mb-4 text-dark">Quick Actions</h2>
           <div className="space-y-4">
-            <button onClick={() => setCurrentView('loads')} className="w-full flex items-center justify-center bg-primary text-white py-3 px-4 rounded-lg font-semibold hover:brightness-95 transition duration-200">
+            <button onClick={() => setCurrentView('loads')} className="w-full flex items-center justify-center bg-primary text-white py-3 px-4 rounded-lg font-semibold hover:bg-primary/90 transition duration-200">
               <PlusCircleIcon />
               <span className="ml-2">Add New Load</span>
             </button>
-            <button onClick={() => setCurrentView('trips')} className="w-full flex items-center justify-center bg-secondary text-white py-3 px-4 rounded-lg font-semibold hover:brightness-95 transition duration-200">
+            <button onClick={() => setCurrentView('trips')} className="w-full flex items-center justify-center bg-secondary text-white py-3 px-4 rounded-lg font-semibold hover:bg-secondary/90 transition duration-200">
               <SwitchHorizontalIcon />
               <span className="ml-2">Assign Truck to Load</span>
             </button>
@@ -168,24 +180,27 @@ const Dashboard: React.FC<DashboardProps> = ({ logisticsState, setCurrentView })
 
         <div className="lg:col-span-2 bg-white p-6 rounded-lg shadow-md">
           <h2 className="text-xl font-semibold mb-4 text-dark">Active Trips Overview</h2>
-          <div className="overflow-x-auto">
             {activeTrips.length > 0 ? (
-                <table className="w-full text-sm text-left">
-                    <thead className="text-xs text-gray-500 uppercase"><tr><th className="py-2">Route</th><th className="py-2">Truck</th><th className="py-2">Status</th></tr></thead>
-                    <tbody>
-                        {activeTrips.slice(0, 5).map(trip => {
-                            const load = loads.find(l => l.id === trip.loadId);
-                            const truck = trucks.find(t => t.id === trip.truckId);
-                            return (
-                                <tr key={trip.id} className="border-b border-gray-200"><td className="py-2 pr-2">{load?.loadingLocation} &rarr; {load?.unloadingLocation}</td><td className="py-2 pr-2">{truck?.truckNumber}</td><td className="py-2"><span className="text-xs font-semibold text-warning">{trip.status}</span></td></tr>
-                            )
-                        })}
-                    </tbody>
-                </table>
+                <div className="space-y-4">
+                    {activeTrips.slice(0, 5).map(trip => {
+                        const load = loads.find(l => l.id === trip.loadId);
+                        const truck = trucks.find(t => t.id === trip.truckId);
+                        return (
+                            <div key={trip.id} className="p-4 border rounded-lg hover:bg-gray-50">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <p className="font-semibold text-dark">{load?.loadingLocation} &rarr; {load?.unloadingLocation}</p>
+                                        <p className="text-sm text-medium">{truck?.truckNumber}</p>
+                                    </div>
+                                    <span className="text-xs font-semibold text-warning bg-warning/10 px-2 py-1 rounded-full">{trip.status}</span>
+                                </div>
+                            </div>
+                        )
+                    })}
+                </div>
             ) : (
-              <p className="text-gray-500">No active trips.</p>
+              <p className="text-gray-500 text-center py-8">No active trips at the moment.</p>
             )}
-          </div>
         </div>
       </div>
       {modalDetails && (

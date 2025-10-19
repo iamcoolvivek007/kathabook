@@ -50,11 +50,11 @@ const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView }) => {
   ] as const;
 
   return (
-    <header className="bg-dark shadow-md">
+    <header className="bg-dark shadow-md sticky top-0 z-40">
       <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
-            <span className="text-white font-bold text-xl">Logistics Dashboard</span>
+            <span className="text-white font-bold text-xl">LogiDash</span>
           </div>
           <div className="hidden md:block">
             <div className="ml-10 flex items-baseline space-x-4">
@@ -95,21 +95,21 @@ const Header: React.FC<HeaderProps> = ({ currentView, setCurrentView }) => {
       </nav>
 
       {isMobileMenuOpen && (
-        <div className="md:hidden" id="mobile-menu">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            {navLinks.map(({ view, label }) => (
-              <NavLink
-                key={view}
-                viewName={view}
-                currentView={currentView}
-                setCurrentView={setCurrentView}
-                className="block w-full text-left px-3 py-2 text-base"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                {label}
-              </NavLink>
-            ))}
-          </div>
+        <div className="md:hidden fixed inset-0 bg-dark z-50" id="mobile-menu">
+            <div className="pt-20 px-2 space-y-2 flex flex-col items-center">
+                 {navLinks.map(({ view, label }) => (
+                    <NavLink
+                        key={view}
+                        viewName={view}
+                        currentView={currentView}
+                        setCurrentView={setCurrentView}
+                        className="block w-full text-center py-4 text-xl"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                    >
+                        {label}
+                    </NavLink>
+                ))}
+            </div>
         </div>
       )}
     </header>

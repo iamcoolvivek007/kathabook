@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import type { Trip, Load, Truck, Client, Transaction, Document } from '../types';
 import { TripStatus, TransactionType, PaymentMode, PaymentStatus, TransactionPurpose } from '../types';
@@ -58,15 +57,15 @@ const AddTransactionInlineForm: React.FC<AddTransactionInlineFormProps> = ({ tri
     <form onSubmit={handleSubmit} className="bg-gray-50 p-4 rounded-lg mt-4 border space-y-4">
       <h5 className="text-md font-semibold text-gray-800">{getTitle()}</h5>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        <div><label className="block text-xs font-medium text-gray-600">Amount</label><input type="number" name="amount" value={formData.amount} onChange={handleChange} required className="mt-1 block w-full p-2 border rounded-md text-sm"/></div>
-        <div><label className="block text-xs font-medium text-gray-600">Date</label><input type="date" name="date" value={formData.date} onChange={handleChange} required className="mt-1 block w-full p-2 border rounded-md text-sm"/></div>
-        <div><label className="block text-xs font-medium text-gray-600">Payment Mode</label><select name="paymentMode" value={formData.paymentMode} onChange={handleChange} className="mt-1 block w-full p-2 border rounded-md text-sm">{Object.values(PaymentMode).map(m=><option key={m} value={m}>{m}</option>)}</select></div>
-        <div className="sm:col-span-2"><label className="block text-xs font-medium text-gray-600">Notes (e.g., "Advance", "Balance")</label><input type="text" name="notes" value={formData.notes} onChange={handleChange} className="mt-1 block w-full p-2 border rounded-md text-sm"/></div>
-         <div><label className="block text-xs font-medium text-gray-600">Status</label><select name="status" value={formData.status} onChange={handleChange} className="mt-1 block w-full p-2 border rounded-md text-sm">{Object.values(PaymentStatus).map(s => <option key={s} value={s}>{s}</option>)}</select></div>
+        <div><label className="block text-xs font-medium text-gray-600">Amount</label><input type="number" name="amount" value={formData.amount} onChange={handleChange} required className="mt-1 block w-full p-2 border rounded-md text-sm bg-white focus:ring-primary focus:border-primary"/></div>
+        <div><label className="block text-xs font-medium text-gray-600">Date</label><input type="date" name="date" value={formData.date} onChange={handleChange} required className="mt-1 block w-full p-2 border rounded-md text-sm bg-white focus:ring-primary focus:border-primary"/></div>
+        <div><label className="block text-xs font-medium text-gray-600">Payment Mode</label><select name="paymentMode" value={formData.paymentMode} onChange={handleChange} className="mt-1 block w-full p-2 border rounded-md text-sm bg-white focus:ring-primary focus:border-primary">{Object.values(PaymentMode).map(m=><option key={m} value={m}>{m}</option>)}</select></div>
+        <div className="sm:col-span-2"><label className="block text-xs font-medium text-gray-600">Notes (e.g., "Advance", "Balance")</label><input type="text" name="notes" value={formData.notes} onChange={handleChange} className="mt-1 block w-full p-2 border rounded-md text-sm bg-white focus:ring-primary focus:border-primary"/></div>
+         <div><label className="block text-xs font-medium text-gray-600">Status</label><select name="status" value={formData.status} onChange={handleChange} className="mt-1 block w-full p-2 border rounded-md text-sm bg-white focus:ring-primary focus:border-primary">{Object.values(PaymentStatus).map(s => <option key={s} value={s}>{s}</option>)}</select></div>
       </div>
       <div className="flex justify-end space-x-2">
         <button type="button" onClick={onCancel} className="px-3 py-1 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 text-sm">Cancel</button>
-        <button type="submit" className="px-3 py-1 bg-primary text-white rounded-md hover:brightness-95 text-sm">Save</button>
+        <button type="submit" className="px-3 py-1 bg-primary text-white rounded-md hover:bg-primary/90 text-sm">Save</button>
       </div>
     </form>
   );
@@ -124,7 +123,7 @@ const TripDetailModal: React.FC<TripDetailModalProps> = ({ isOpen, onClose, trip
     .reduce((sum, t) => sum + t.amount, 0);
   const commissionDue = trip.driverCommission - commissionPaid;
   
-  const profit = clientPaid - truckPaid - commissionPaid;
+  const profit = clientPaid + commissionPaid - truckPaid;
 
   const handleSaveTransaction = (transaction: Omit<Transaction, 'id'>) => {
     addTransaction(transaction);
@@ -173,17 +172,19 @@ const TripDetailModal: React.FC<TripDetailModalProps> = ({ isOpen, onClose, trip
                     <div className="flex justify-between items-center"><span className="text-gray-600">Client Paid</span><span className="font-medium text-success">{formatCurrency(clientPaid)}</span></div>
                     <div className="flex justify-between items-center border-t mt-1 pt-1"><span className="font-semibold text-gray-800">Client Due</span><span className={`font-bold ${clientDue > 0 ? 'text-danger' : 'text-success'}`}>{formatCurrency(clientDue)}</span></div>
                 </div>
+                {/* Commission */}
+                {trip.driverCommission > 0 && (
+                  <div className="p-2 bg-green-50/50 rounded-md">
+                      <div className="flex justify-between items-center"><span className="text-gray-600">Driver Commission (Total)</span><span className="font-medium text-gray-900">{formatCurrency(trip.driverCommission)}</span></div>
+                      <div className="flex justify-between items-center"><span className="text-gray-600">Commission Received</span><span className="font-medium text-success">{formatCurrency(commissionPaid)}</span></div>
+                      <div className="flex justify-between items-center border-t mt-1 pt-1"><span className="font-semibold text-gray-800">Commission Receivable</span><span className={`font-bold ${commissionDue > 0 ? 'text-danger' : 'text-success'}`}>{formatCurrency(commissionDue)}</span></div>
+                  </div>
+                )}
                  {/* Truck */}
                 <div className="p-2 bg-red-50/50 rounded-md">
                     <div className="flex justify-between items-center"><span className="text-gray-600">Truck Freight (Total)</span><span className="font-medium text-gray-900">{formatCurrency(trip.truckFreight)}</span></div>
                     <div className="flex justify-between items-center"><span className="text-gray-600">Truck Paid</span><span className="font-medium text-danger">{formatCurrency(truckPaid)}</span></div>
                     <div className="flex justify-between items-center border-t mt-1 pt-1"><span className="font-semibold text-gray-800">Truck Due</span><span className={`font-bold ${truckDue > 0 ? 'text-danger' : 'text-success'}`}>{formatCurrency(truckDue)}</span></div>
-                </div>
-                 {/* Commission */}
-                <div className="p-2 bg-yellow-50/50 rounded-md">
-                    <div className="flex justify-between items-center"><span className="text-gray-600">Driver Commission</span><span className="font-medium text-gray-900">{formatCurrency(trip.driverCommission)}</span></div>
-                    <div className="flex justify-between items-center"><span className="text-gray-600">Commission Paid</span><span className="font-medium text-danger">{formatCurrency(commissionPaid)}</span></div>
-                    <div className="flex justify-between items-center border-t mt-1 pt-1"><span className="font-semibold text-gray-800">Commission Due</span><span className={`font-bold ${commissionDue > 0 ? 'text-danger' : 'text-success'}`}>{formatCurrency(commissionDue)}</span></div>
                 </div>
                 <div className="flex justify-between items-center text-base border-t pt-2 mt-2"><span className="font-bold">Net Profit (from completed txns)</span><span className={`font-bold ${profit >= 0 ? 'text-success' : 'text-danger'}`}>{formatCurrency(profit)}</span></div>
               </div>
@@ -191,31 +192,31 @@ const TripDetailModal: React.FC<TripDetailModalProps> = ({ isOpen, onClose, trip
 
              {/* Transactions */}
             <div className="bg-white p-4 rounded-lg border">
-              <div className="flex justify-between items-center mb-3">
-                <h4 className="font-semibold text-lg">Transaction History</h4>
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-3">
+                <h4 className="font-semibold text-lg mb-2 sm:mb-0">Transaction History</h4>
                 {!transactionFormInitialData && (
-                   <div className="space-x-2 flex flex-wrap gap-2 justify-end">
+                   <div className="flex flex-col sm:flex-row sm:space-x-2 space-y-2 sm:space-y-0">
                      <button
                         onClick={() => setTransactionFormInitialData({ type: TransactionType.Credit, purpose: TransactionPurpose.ClientFreight, amount: clientDue > 0 ? clientDue : undefined, notes: clientPaid > 0 ? 'Balance Payment' : 'Advance Payment' })}
                         disabled={clientDue <= 0}
-                        className="px-3 py-1 bg-success text-white text-xs font-semibold rounded-md hover:brightness-95 filter disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        className="w-full sm:w-auto px-3 py-1 bg-success text-white text-xs font-semibold rounded-md hover:bg-success/90 filter disabled:bg-gray-400 disabled:cursor-not-allowed"
                      >
                         Log Client Payment
                      </button>
                      <button
                         onClick={() => setTransactionFormInitialData({ type: TransactionType.Debit, purpose: TransactionPurpose.TruckFreight, amount: truckDue > 0 ? truckDue : undefined, notes: truckPaid > 0 ? 'Balance Payment' : 'Advance Payment' })}
                         disabled={truckDue <= 0}
-                        className="px-3 py-1 bg-danger text-white text-xs font-semibold rounded-md hover:brightness-95 filter disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        className="w-full sm:w-auto px-3 py-1 bg-danger text-white text-xs font-semibold rounded-md hover:bg-danger/90 filter disabled:bg-gray-400 disabled:cursor-not-allowed"
                      >
                         Log Truck Payment
                      </button>
-                      <button
-                        onClick={() => setTransactionFormInitialData({ type: TransactionType.Debit, purpose: TransactionPurpose.DriverCommission, amount: commissionDue > 0 ? commissionDue : undefined, notes: 'Commission Payment'})}
+                      {trip.driverCommission > 0 && <button
+                        onClick={() => setTransactionFormInitialData({ type: TransactionType.Credit, purpose: TransactionPurpose.DriverCommission, amount: commissionDue > 0 ? commissionDue : undefined, notes: 'Commission Payment'})}
                         disabled={commissionDue <= 0}
-                        className="px-3 py-1 bg-warning text-white text-xs font-semibold rounded-md hover:brightness-95 filter disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        className="w-full sm:w-auto px-3 py-1 bg-yellow-500 text-white text-xs font-semibold rounded-md hover:bg-yellow-600 filter disabled:bg-gray-400 disabled:cursor-not-allowed"
                      >
                         Log Commission
-                     </button>
+                     </button>}
                    </div>
                 )}
               </div>
@@ -223,7 +224,7 @@ const TripDetailModal: React.FC<TripDetailModalProps> = ({ isOpen, onClose, trip
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead className="bg-gray-50"><tr className="text-left text-gray-600"><th className="p-2 font-medium">Date</th><th className="p-2 font-medium">Purpose</th><th className="p-2 font-medium">Amount</th><th className="p-2 font-medium">Mode</th><th className="p-2 font-medium">Status</th><th className="p-2 font-medium">Notes</th></tr></thead>
-                        <tbody>{transactions.map(t => <tr key={t.id} className="border-b"><td className="p-2 whitespace-nowrap">{formatDate(t.date)}</td><td className={`p-2 font-semibold ${t.type === TransactionType.Credit ? 'text-success' : 'text-danger'}`}>{t.purpose}</td><td className="p-2 whitespace-nowrap">{formatCurrency(t.amount)}</td><td className="p-2">{t.paymentMode}</td><td className="p-2">{t.status}</td><td className="p-2 text-xs max-w-xs whitespace-normal">{t.notes}</td></tr>)}</tbody>
+                        <tbody>{transactions.map(t => <tr key={t.id} className="border-b text-gray-700"><td className="p-2 whitespace-nowrap">{formatDate(t.date)}</td><td className={`p-2 font-semibold ${t.type === TransactionType.Credit ? 'text-success' : 'text-danger'}`}>{t.purpose}</td><td className="p-2 whitespace-nowrap">{formatCurrency(t.amount)}</td><td className="p-2">{t.paymentMode}</td><td className="p-2">{t.status}</td><td className="p-2 text-xs max-w-xs whitespace-normal">{t.notes}</td></tr>)}</tbody>
                     </table>
                 </div>
               ) : <p className="text-sm text-gray-500">No transactions recorded for this trip.</p>}
@@ -236,7 +237,7 @@ const TripDetailModal: React.FC<TripDetailModalProps> = ({ isOpen, onClose, trip
             {/* Fleet Details */}
             <div className="bg-white p-4 rounded-lg border">
                  <h4 className="font-semibold text-lg mb-3 flex items-center"><TruckIcon /> <span className="ml-2">Fleet Details</span></h4>
-                 <div className="grid grid-cols-2 gap-4">
+                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <DetailItem label="Truck Number" value={truck.truckNumber} />
                     <DetailItem label="Truck Type" value={truck.truckType} />
                     <DetailItem label="Driver Name" value={truck.driverName} />
@@ -248,7 +249,7 @@ const TripDetailModal: React.FC<TripDetailModalProps> = ({ isOpen, onClose, trip
             <div className="bg-white p-4 rounded-lg border">
                 <div className="flex justify-between items-center mb-3">
                     <h4 className="font-semibold text-lg flex items-center"><DocumentIcon /> <span className="ml-2">Documents</span></h4>
-                    <label htmlFor="trip-doc-upload" className="cursor-pointer text-sm px-3 py-1 bg-primary text-white font-semibold rounded-md hover:brightness-95">
+                    <label htmlFor="trip-doc-upload" className="cursor-pointer text-sm px-3 py-1 bg-primary text-white font-semibold rounded-md hover:bg-primary/90">
                         Upload
                         <input id="trip-doc-upload" type="file" className="sr-only" onChange={handleFileUpload} />
                     </label>

@@ -8,8 +8,15 @@ const Reporting: React.FC<{ logisticsState: LogisticsState }> = ({ logisticsStat
   const { trips, loads, transactions, clients } = logisticsState;
 
   // Financial Calculations
-  const totalClientRevenue = loads.reduce((sum, load) => sum + load.clientFreight, 0);
-  const totalCosts = trips.reduce((sum, trip) => sum + trip.truckFreight + trip.driverCommission, 0);
+  const totalRevenue = useMemo(() => {
+    return trips.reduce((sum, trip) => {
+        const load = loads.find(l => l.id === trip.loadId);
+        const clientFreight = load ? load.clientFreight : 0;
+        return sum + clientFreight + trip.driverCommission;
+    }, 0);
+  }, [trips, loads]);
+
+  const totalCosts = trips.reduce((sum, trip) => sum + trip.truckFreight, 0);
 
   const totalReceived = transactions
     .filter(t => t.type === TransactionType.Credit && t.status === PaymentStatus.Completed)
@@ -19,7 +26,7 @@ const Reporting: React.FC<{ logisticsState: LogisticsState }> = ({ logisticsStat
     .filter(t => t.type === TransactionType.Debit && t.status === PaymentStatus.Completed)
     .reduce((sum, t) => sum + t.amount, 0);
 
-  const totalClientDues = totalClientRevenue - totalReceived;
+  const totalReceivables = totalRevenue - totalReceived;
   const totalPayables = totalCosts - totalPaidOut;
   const cashInHand = totalReceived - totalPaidOut;
 
@@ -30,7 +37,7 @@ const Reporting: React.FC<{ logisticsState: LogisticsState }> = ({ logisticsStat
       .map(trip => {
         const load = loads.find(l => l.id === trip.loadId);
         if (!load) return null;
-        const profit = (load.clientFreight - trip.truckFreight) + trip.driverCommission;
+        const profit = load.clientFreight + trip.driverCommission - trip.truckFreight;
         return {
           tripId: trip.id,
           loadId: load.id,
@@ -39,7 +46,7 @@ const Reporting: React.FC<{ logisticsState: LogisticsState }> = ({ logisticsStat
           driverCommission: trip.driverCommission,
           profit,
         };
-      }).filter(Boolean);
+      }).filter((item): item is NonNullable<typeof item> => item !== null);
   }, [trips, loads]);
 
   const pendingReceivables = useMemo(() => {
@@ -70,7 +77,7 @@ const Reporting: React.FC<{ logisticsState: LogisticsState }> = ({ logisticsStat
       
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatCard title="Client Dues" value={formatCurrency(totalClientDues)} icon={<TrendingUpIcon />} description="Total outstanding from clients" />
+        <StatCard title="Total Receivables" value={formatCurrency(totalReceivables)} icon={<TrendingUpIcon />} description="Total outstanding from clients & drivers" />
         <StatCard title="Truck/Driver Dues" value={formatCurrency(totalPayables)} icon={<TrendingDownIcon />} description="Total outstanding payments" />
         <StatCard title="Cash in Hand" value={formatCurrency(cashInHand)} icon={<CashIcon />} description="Net cash flow" />
       </div>
@@ -81,22 +88,26 @@ const Reporting: React.FC<{ logisticsState: LogisticsState }> = ({ logisticsStat
           <h2 className="text-2xl font-semibold text-dark mb-4">Pending Payments Ledgers</h2>
           <div className="space-y-6">
             <div className="bg-white p-4 rounded-lg shadow-md">
-              <h3 className="font-bold text-lg mb-2 text-success">Outstanding Client Invoices</h3>
-              <table className="w-full text-sm">
-                <thead><tr className="border-b"><th className="text-left p-2">Trip ID</th><th className="text-left p-2">Amount</th><th className="text-left p-2">Date</th><th className="text-left p-2">Notes</th></tr></thead>
-                <tbody>
-                  {pendingReceivables.length > 0 ? pendingReceivables.map(t => <tr key={t.id} className="border-b"><td className="p-2">#{t.tripId.slice(-4)}</td><td className="p-2">{formatCurrency(t.amount)}</td><td className="p-2">{formatDate(t.date)}</td><td className="p-2 text-xs">{t.notes}</td></tr>) : <tr><td colSpan={4} className="p-2 text-gray-500">No pending receivables.</td></tr>}
-                </tbody>
-              </table>
+              <h3 className="font-bold text-lg mb-2 text-success">Outstanding Receivables</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead><tr className="border-b"><th className="text-left p-2">Trip ID</th><th className="text-left p-2">Purpose</th><th className="text-left p-2">Amount</th><th className="text-left p-2">Date</th><th className="text-left p-2">Notes</th></tr></thead>
+                  <tbody>
+                    {pendingReceivables.length > 0 ? pendingReceivables.map(t => <tr key={t.id} className="border-b"><td className="p-2">#{t.tripId.slice(-4)}</td><td className="p-2 font-semibold">{t.purpose}</td><td className="p-2">{formatCurrency(t.amount)}</td><td className="p-2">{formatDate(t.date)}</td><td className="p-2 text-xs">{t.notes}</td></tr>) : <tr><td colSpan={5} className="p-4 text-center text-gray-500">No pending receivables.</td></tr>}
+                  </tbody>
+                </table>
+              </div>
             </div>
             <div className="bg-white p-4 rounded-lg shadow-md">
               <h3 className="font-bold text-lg mb-2 text-danger">Outstanding Payables</h3>
-              <table className="w-full text-sm">
-                <thead><tr className="border-b"><th className="text-left p-2">Trip ID</th><th className="text-left p-2">Purpose</th><th className="text-left p-2">Amount</th><th className="text-left p-2">Date</th><th className="text-left p-2">Notes</th></tr></thead>
-                <tbody>
-                  {pendingPayables.length > 0 ? pendingPayables.map(t => <tr key={t.id} className="border-b"><td className="p-2">#{t.tripId.slice(-4)}</td><td className="p-2 font-semibold">{t.purpose}</td><td className="p-2">{formatCurrency(t.amount)}</td><td className="p-2">{formatDate(t.date)}</td><td className="p-2 text-xs">{t.notes}</td></tr>) : <tr><td colSpan={5} className="p-2 text-gray-500">No pending payables.</td></tr>}
-                </tbody>
-              </table>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead><tr className="border-b"><th className="text-left p-2">Trip ID</th><th className="text-left p-2">Purpose</th><th className="text-left p-2">Amount</th><th className="text-left p-2">Date</th><th className="text-left p-2">Notes</th></tr></thead>
+                  <tbody>
+                    {pendingPayables.length > 0 ? pendingPayables.map(t => <tr key={t.id} className="border-b"><td className="p-2">#{t.tripId.slice(-4)}</td><td className="p-2 font-semibold">{t.purpose}</td><td className="p-2">{formatCurrency(t.amount)}</td><td className="p-2">{formatDate(t.date)}</td><td className="p-2 text-xs">{t.notes}</td></tr>) : <tr><td colSpan={5} className="p-4 text-center text-gray-500">No pending payables.</td></tr>}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
@@ -112,8 +123,8 @@ const Reporting: React.FC<{ logisticsState: LogisticsState }> = ({ logisticsStat
                   {clientWiseSummary.map(summary => (
                     <tr key={summary.clientName} className="bg-white border-b hover:bg-gray-50">
                       <td className="px-6 py-4 font-medium">{summary.clientName}</td>
-                      <td className="px-6 py-4">{summary.totalLoads}</td>
-                      <td className="px-6 py-4">{summary.completedTrips}</td>
+                      <td className="px-6 py-4 text-center">{summary.totalLoads}</td>
+                      <td className="px-6 py-4 text-center">{summary.completedTrips}</td>
                       <td className="px-6 py-4 font-semibold">{formatCurrency(summary.totalBusiness)}</td>
                     </tr>
                   ))}
@@ -133,7 +144,7 @@ const Reporting: React.FC<{ logisticsState: LogisticsState }> = ({ logisticsStat
               <thead className="text-xs text-gray-700 uppercase bg-gray-50">
                 <tr>
                   <th className="px-6 py-3">Trip ID</th><th className="px-6 py-3">Client Freight</th>
-                  <th className="px-6 py-3">Truck Freight</th><th className="px-6 py-3">Commission</th>
+                  <th className="px-6 py-3">Driver Commission</th><th className="px-6 py-3">Truck Freight</th>
                   <th className="px-6 py-3">Trip Profit</th>
                 </tr>
               </thead>
@@ -142,8 +153,8 @@ const Reporting: React.FC<{ logisticsState: LogisticsState }> = ({ logisticsStat
                   <tr key={item.tripId} className="bg-white border-b hover:bg-gray-50">
                     <td className="px-6 py-4 font-medium">#{item.tripId.slice(-4)}</td>
                     <td className="px-6 py-4 text-success">{formatCurrency(item.clientFreight)}</td>
-                    <td className="px-6 py-4 text-danger">-{formatCurrency(item.truckFreight)}</td>
                     <td className="px-6 py-4 text-success">{formatCurrency(item.driverCommission)}</td>
+                    <td className="px-6 py-4 text-danger">-{formatCurrency(item.truckFreight)}</td>
                     <td className={`px-6 py-4 font-bold ${item.profit >= 0 ? 'text-success' : 'text-danger'}`}>{formatCurrency(item.profit)}</td>
                   </tr>
                 ))}

@@ -52,20 +52,20 @@ const TransactionForm: React.FC<{
   };
   
   const availablePurposes = formData.type === TransactionType.Credit 
-    ? [TransactionPurpose.ClientFreight] 
-    : [TransactionPurpose.TruckFreight, TransactionPurpose.DriverCommission];
+    ? [TransactionPurpose.ClientFreight, TransactionPurpose.DriverCommission] 
+    : [TransactionPurpose.TruckFreight];
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div><label className="block text-sm font-medium">Trip Association</label><select name="tripId" value={formData.tripId} onChange={handleChange} required className="mt-1 block w-full p-2 border rounded-md"><option value="">Select a Trip</option>{logisticsState.trips.map(trip => <option key={trip.id} value={trip.id}>Trip #{trip.id.slice(-4)} (Load #{trip.loadId.slice(-4)})</option>)}</select></div>
-        <div><label className="block text-sm font-medium">Amount</label><input type="number" name="amount" value={formData.amount} onChange={handleChange} required className="mt-1 block w-full p-2 border rounded-md" /></div>
-        <div><label className="block text-sm font-medium">Date</label><input type="date" name="date" value={formData.date} onChange={handleChange} required className="mt-1 block w-full p-2 border rounded-md" /></div>
-        <div><label className="block text-sm font-medium">Type</label><select name="type" value={formData.type} onChange={handleChange} className="mt-1 block w-full p-2 border rounded-md">{Object.values(TransactionType).map(t => <option key={t} value={t}>{t}</option>)}</select></div>
-        <div><label className="block text-sm font-medium">Purpose</label><select name="purpose" value={formData.purpose} onChange={handleChange} className="mt-1 block w-full p-2 border rounded-md">{availablePurposes.map(p => <option key={p} value={p}>{p}</option>)}</select></div>
-        <div><label className="block text-sm font-medium">Payment Mode</label><select name="paymentMode" value={formData.paymentMode} onChange={handleChange} className="mt-1 block w-full p-2 border rounded-md">{Object.values(PaymentMode).map(m => <option key={m} value={m}>{m}</option>)}</select></div>
-        <div className="md:col-span-2"><label className="block text-sm font-medium">Status</label><select name="status" value={formData.status} onChange={handleChange} className="mt-1 block w-full p-2 border rounded-md">{Object.values(PaymentStatus).map(s => <option key={s} value={s}>{s}</option>)}</select></div>
-        <div className="md:col-span-2"><label className="block text-sm font-medium">Notes</label><textarea name="notes" value={formData.notes} onChange={handleChange} rows={3} className="mt-1 block w-full p-2 border rounded-md"></textarea></div>
+        <div><label className="block text-sm font-medium">Trip Association</label><select name="tripId" value={formData.tripId} onChange={handleChange} required className="mt-1 block w-full p-2 border rounded-md bg-white focus:ring-primary focus:border-primary"><option value="">Select a Trip</option>{logisticsState.trips.map(trip => <option key={trip.id} value={trip.id}>Trip #{trip.id.slice(-4)} (Load #{trip.loadId.slice(-4)})</option>)}</select></div>
+        <div><label className="block text-sm font-medium">Amount</label><input type="number" name="amount" value={formData.amount} onChange={handleChange} required className="mt-1 block w-full p-2 border rounded-md bg-white focus:ring-primary focus:border-primary" /></div>
+        <div><label className="block text-sm font-medium">Date</label><input type="date" name="date" value={formData.date} onChange={handleChange} required className="mt-1 block w-full p-2 border rounded-md bg-white focus:ring-primary focus:border-primary" /></div>
+        <div><label className="block text-sm font-medium">Type</label><select name="type" value={formData.type} onChange={handleChange} className="mt-1 block w-full p-2 border rounded-md bg-white focus:ring-primary focus:border-primary">{Object.values(TransactionType).map(t => <option key={t} value={t}>{t}</option>)}</select></div>
+        <div><label className="block text-sm font-medium">Purpose</label><select name="purpose" value={formData.purpose} onChange={handleChange} className="mt-1 block w-full p-2 border rounded-md bg-white focus:ring-primary focus:border-primary">{availablePurposes.map(p => <option key={p} value={p}>{p}</option>)}</select></div>
+        <div><label className="block text-sm font-medium">Payment Mode</label><select name="paymentMode" value={formData.paymentMode} onChange={handleChange} className="mt-1 block w-full p-2 border rounded-md bg-white focus:ring-primary focus:border-primary">{Object.values(PaymentMode).map(m => <option key={m} value={m}>{m}</option>)}</select></div>
+        <div className="md:col-span-2"><label className="block text-sm font-medium">Status</label><select name="status" value={formData.status} onChange={handleChange} className="mt-1 block w-full p-2 border rounded-md bg-white focus:ring-primary focus:border-primary">{Object.values(PaymentStatus).map(s => <option key={s} value={s}>{s}</option>)}</select></div>
+        <div className="md:col-span-2"><label className="block text-sm font-medium">Notes</label><textarea name="notes" value={formData.notes} onChange={handleChange} rows={3} className="mt-1 block w-full p-2 border rounded-md bg-white focus:ring-primary focus:border-primary"></textarea></div>
       </div>
       <div className="flex justify-end pt-4 space-x-2">
         <button type="button" onClick={onClose} className="px-4 py-2 bg-gray-200 rounded-md">Cancel</button>
@@ -110,12 +110,16 @@ const TransactionManagement: React.FC<{ logisticsState: LogisticsState }> = ({ l
       });
   }, [transactions, searchTerm, typeFilter]);
 
+  const getStatusColor = (status: PaymentStatus) => {
+    return status === PaymentStatus.Completed ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning';
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Transaction Management"
         actionButton={
-            <button onClick={() => handleOpenModal()} className="px-4 py-2 bg-primary text-white rounded-md flex items-center shadow-sm">
+            <button onClick={() => handleOpenModal()} className="px-4 py-2 bg-primary text-white rounded-md flex items-center shadow-sm hover:bg-primary/90">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" /></svg>
                 Log Payment
             </button>
@@ -123,10 +127,10 @@ const TransactionManagement: React.FC<{ logisticsState: LogisticsState }> = ({ l
       >
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white p-4 rounded-lg shadow-sm border">
             <div className="md:col-span-2">
-                <input type="text" placeholder="Search by Trip ID or notes..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full p-2 border border-gray-300 rounded-md shadow-sm" />
+                <input type="text" placeholder="Search by Trip ID or notes..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="w-full p-2 border border-gray-300 rounded-md shadow-sm bg-white focus:ring-primary focus:border-primary" />
             </div>
             <div>
-                <select value={typeFilter} onChange={e => setTypeFilter(e.target.value as 'all' | TransactionType)} className="w-full p-2 border border-gray-300 rounded-md shadow-sm">
+                <select value={typeFilter} onChange={e => setTypeFilter(e.target.value as 'all' | TransactionType)} className="w-full p-2 border border-gray-300 rounded-md shadow-sm bg-white focus:ring-primary focus:border-primary">
                     <option value="all">All Types</option>
                     <option value={TransactionType.Credit}>Credit</option>
                     <option value={TransactionType.Debit}>Debit</option>
@@ -135,7 +139,33 @@ const TransactionManagement: React.FC<{ logisticsState: LogisticsState }> = ({ l
         </div>
       </PageHeader>
       
-      <div className="bg-white p-4 rounded-lg shadow-md">
+      {/* Mobile View */}
+      <div className="space-y-4 md:hidden">
+        {filteredTransactions.map(txn => (
+            <div key={txn.id} className="bg-white p-4 rounded-lg shadow-md border">
+                <div className="flex justify-between items-start">
+                    <div>
+                        <p className={`font-bold text-lg ${txn.type === TransactionType.Credit ? 'text-success' : 'text-danger'}`}>{formatCurrency(txn.amount)}</p>
+                        <p className="text-sm font-semibold">{txn.purpose}</p>
+                        <p className="text-xs text-medium">Trip #{txn.tripId.slice(-4)}</p>
+                    </div>
+                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(txn.status)}`}>{txn.status}</span>
+                </div>
+                <div className="mt-4 text-sm space-y-1">
+                    <p><span className="font-semibold">Date:</span> {formatDate(txn.date)}</p>
+                    <p><span className="font-semibold">Mode:</span> {txn.paymentMode}</p>
+                    {txn.notes && <p className="text-xs italic text-gray-500 pt-1">"{txn.notes}"</p>}
+                </div>
+                 <div className="mt-4 pt-2 border-t flex justify-end space-x-4 text-sm font-medium">
+                    <button onClick={() => handleOpenModal(txn)} className="text-primary hover:underline">Edit</button>
+                    <button onClick={() => deleteTransaction(txn.id)} className="text-danger hover:underline">Delete</button>
+                </div>
+            </div>
+        ))}
+      </div>
+
+      {/* Desktop View */}
+      <div className="hidden md:block bg-white rounded-lg shadow-md overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left text-gray-500">
             <thead className="text-xs text-gray-700 uppercase bg-gray-50">
@@ -153,7 +183,7 @@ const TransactionManagement: React.FC<{ logisticsState: LogisticsState }> = ({ l
                   <td className={`px-4 py-3 font-semibold ${txn.type === TransactionType.Credit ? 'text-success' : 'text-danger'}`}>{txn.purpose}</td>
                   <td className="px-4 py-3 font-semibold">{formatCurrency(txn.amount)}</td>
                   <td className="px-4 py-3">{txn.paymentMode}</td>
-                  <td className="px-4 py-3"><span className={`px-2 py-1 text-xs font-semibold rounded-full ${txn.status === PaymentStatus.Completed ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'}`}>{txn.status}</span></td>
+                  <td className="px-4 py-3"><span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(txn.status)}`}>{txn.status}</span></td>
                   <td className="px-4 py-3 text-xs">{txn.notes}</td>
                   <td className="px-4 py-3 flex space-x-2"><button onClick={() => handleOpenModal(txn)} className="text-primary hover:underline">Edit</button><button onClick={() => deleteTransaction(txn.id)} className="text-danger hover:underline">Delete</button></td>
                 </tr>

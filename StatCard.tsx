@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 interface StatCardProps {
@@ -31,8 +30,8 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, description, icon, on
       onKeyDown={handleKeyDown}
       role={isClickable ? 'button' : undefined}
       tabIndex={isClickable ? 0 : undefined}
-      className={`bg-white p-6 rounded-lg shadow-md flex items-center space-x-4 transition-all duration-200 ${
-        isClickable ? 'hover:scale-105 hover:shadow-lg cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary' : ''
+      className={`bg-white p-4 rounded-lg shadow-md flex items-center space-x-4 transition-all duration-200 border ${
+        isClickable ? 'hover:scale-105 hover:shadow-lg hover:border-primary cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary' : ''
       }`}
     >
       <div className="p-3 bg-primary/10 text-primary rounded-full">
@@ -40,8 +39,8 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, description, icon, on
       </div>
       <div>
         <p className="text-sm font-medium text-gray-500">{title}</p>
-        <p className="text-2xl font-bold text-dark">{value}</p>
-        {description && <p className="text-xs text-gray-400 mt-1">{description}</p>}
+        <p className="text-xl md:text-2xl font-bold text-dark">{value}</p>
+        {description && <p className="text-xs text-gray-400 mt-1 hidden sm:block">{description}</p>}
       </div>
     </div>
   );

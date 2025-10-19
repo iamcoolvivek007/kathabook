@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import type { Client, Load, Truck, Trip, Transaction, LoadTemplate, Document } from '../types';
 import { initialClients, initialLoads, initialTrucks, initialTrips, initialTransactions, initialLoadTemplates, initialDocuments } from '../constants';
 
@@ -12,6 +12,7 @@ export const useLogisticsState = () => {
   const [loadTemplates, setLoadTemplates] = useState<LoadTemplate[]>(initialLoadTemplates);
   const [documents, setDocuments] = useState<Document[]>(initialDocuments);
 
+  // FIX: These functions were throwing errors because the `React` namespace was not available for types.
   // Generic CRUD helpers
   const addItem = <T,>(setter: React.Dispatch<React.SetStateAction<T[]>>, item: T) => {
     setter(prev => [...prev, item]);
