@@ -1,0 +1,16 @@
+{
+  "name": "LogiDash - Logistics Management",
+  "short_name": "LogiDash",
+  "description": "A comprehensive dashboard for managing logistics operations, including loads, fleet, trips, and financials.",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#F3F4F6",
+  "theme_color": "#111827",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
